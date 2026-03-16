@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TensorLease - Authentication</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #00ff88;
+            --primary-dark: #00cc6a;
+            --secondary: #0066ff;
+            --dark-bg: #0a0e14;
+            --card-bg: #151b24;
+            --card-border: #1f2937;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --error: #ff4444;
+            --success: #00ff88;
+            --warning: #ffaa00;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #0a0e14 0%, #1a1f2e 100%);
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(0, 102, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 255, 136, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(0, 102, 255, 0.05) 0%, transparent 50%);
+            animation: float 30s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(30px, -30px) rotate(120deg); }
+            66% { transform: translate(-20px, 20px) rotate(240deg); }
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Container */
+        .container {
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        /* Auth Card */
+        .auth-wrapper {
+            width: 100%;
+            max-width: 1100px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            background: var(--card-bg);
+            border-radius: 24px;
+            overflow: hidden;
+            border: 1px solid var(--card-border);
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(0, 255, 136, 0.1);
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Left Side - Branding */
+        .auth-brand {
+            background: linear-gradient(135deg, #0066ff 0%, #0052cc 100%);
+            padding: 60px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-brand::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0, 255, 136, 0.15) 0%, transparent 70%);
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.1); opacity: 0.6; }
+        }
+
+        .brand-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 40px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--primary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.4);
+            position: relative;
+        }
+        
+        .logo-icon svg {
+            width: 28px;
+            height: 28px;
+            fill: #0a0e14;
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: 700;
+            color: white;
+            letter-spacing: -0.5px;
+        }
+
+        .brand-title {
+            font-size: 42px;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 20px;
+            color: white;
+        }
+
+        .brand-subtitle {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.6;
+            margin-bottom: 40px;
+        }
+
+        .brand-features {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .feature-icon {
+            width: 24px;
+            height: 24px;
+            background: rgba(0, 255, 136, 0.2);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .feature-icon svg {
+            width: 14px;
+            height: 14px;
+            fill: var(--primary);
+        }
+
+        .brand-footer {
+            position: relative;
+            z-index: 2;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 13px;
+        }
+
+        /* Right Side - Forms */
+        .auth-forms {
+            padding: 60px 50px;
+            background: var(--card-bg);
+        }
+
+        .form-container {
+            display: none;
+        }
+
+        .form-container.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .form-header {
+            margin-bottom: 40px;
+        }
+
+        .form-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .form-subtitle {
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 11px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 15px;
+            font-family: 'Space Grotesk', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(0, 255, 136, 0.05);
+            box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.5;
+        }
+
+        .password-wrapper {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .toggle-password svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--text-secondary);
+            transition: fill 0.3s;
+        }
+
+        .toggle-password:hover svg {
+            fill: var(--primary);
+        }
+
+        .form-check {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .form-check input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .form-check label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary);
+            color: #0a0e14;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: 'Space Grotesk', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 255, 136, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .form-divider {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 30px 0;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .form-divider::before,
+        .form-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--card-border);
+        }
+
+        .form-switch {
+            text-align: center;
+            margin-top: 24px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .form-switch a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .form-switch a:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+
+        .error-message {
+            display: none;
+            padding: 12px 16px;
+            background: rgba(255, 68, 68, 0.1);
+            border: 1px solid rgba(255, 68, 68, 0.3);
+            border-radius: 8px;
+            color: var(--error);
+            font-size: 14px;
+            margin-bottom: 20px;
+            animation: shake 0.5s;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .success-message {
+            display: none;
+            padding: 12px 16px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 8px;
+            color: var(--success);
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        .input-error {
+            border-color: var(--error) !important;
+            background: rgba(255, 68, 68, 0.05) !important;
+        }
+
+        .input-error:focus {
+            box-shadow: 0 0 0 3px rgba(255, 68, 68, 0.1) !important;
+        }
+
+        .field-error {
+            color: var(--error);
+            font-size: 12px;
+            margin-top: 6px;
+            display: none;
+        }
+
+        .field-error.show {
+            display: block;
+        }
+
+        /* Loading State */
+        .btn-loading {
+            position: relative;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .btn-loading::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: 50%;
+            left: 50%;
+            margin-left: -8px;
+            margin-top: -8px;
+            border: 2px solid #0a0e14;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 968px) {
+            .auth-wrapper {
+                grid-template-columns: 1fr;
+                max-width: 500px;
+            }
+
+            .auth-brand {
+                padding: 40px 30px;
+            }
+
+            .brand-title {
+                font-size: 32px;
+            }
+
+            .auth-forms {
+                padding: 40px 30px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+
+            .auth-wrapper {
+                border-radius: 16px;
+            }
+
+            .auth-brand {
+                padding: 30px 20px;
+            }
+
+            .auth-forms {
+                padding: 30px 20px;
+            }
+
+            .form-title {
+                font-size: 26px;
+            }
+
+            .brand-title {
+                font-size: 26px;
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--dark-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--card-border);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        /* Phone Input Styling */
+        .phone-input-wrapper {
+            display: flex;
+            gap: 8px;
+        }
+
+        .country-code {
+            width: 80px;
+            padding: 14px 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 15px;
+            font-family: 'JetBrains Mono', monospace;
+            text-align: center;
+        }
+
+        .phone-number {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    <div class="grid-overlay"></div>
+
+    <div class="container">
+        <div class="auth-wrapper">
+            <!-- Left Side - Branding -->
+            <div class="auth-brand">
+                <div class="brand-content">
+                    <div class="logo">
+                        <div class="logo-icon">
+                            <!-- GPU/Chip Icon -->
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                <path d="M14,2H10A2,2 0 0,0 8,4V6H6A2,2 0 0,0 4,8V10A2,2 0 0,0 6,12H8V14H6A2,2 0 0,0 4,16V18A2,2 0 0,0 6,20H8V22H10V20H14V22H16V20H18A2,2 0 0,0 20,18V16A2,2 0 0,0 18,14H16V12H18A2,2 0 0,0 20,10V8A2,2 0 0,0 18,6H16V4A2,2 0 0,0 14,2M10,6H14V8H10V6M10,12H14V14H10V12M10,18H14V20H10V18Z"/>
+                            </svg>
+                        </div>
+                        <div class="logo-text">TensorLease</div>
+                    </div>
+                    
+                    <h1 class="brand-title">High-Performance Computing untuk Semua Kebutuhan Anda</h1>
+                    <p class="brand-subtitle">
+                        Platform manajemen retainer untuk layanan GPU dan infrastruktur komputasi tingkat enterprise.
+                    </p>
+
+                    <div class="brand-features">
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <!-- Lightning/Speed Icon -->
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                    <path d="M7,2V13H10V22L17,10H13L17,2H7Z"/>
+                                </svg>
+                            </div>
+                            <span>GPU NVIDIA A100 & H100 tersedia</span>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <!-- Shield/Security Icon -->
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                    <path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1Z"/>
+                                </svg>
+                            </div>
+                            <span>Infrastruktur aman dan terisolasi</span>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <!-- Chart/Analytics Icon -->
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                    <path d="M16,11.78L20.24,4.45L21.97,5.45L16.74,14.5L10.23,10.75L5.46,19H22V21H2V3H4V17.54L9.5,8L16,11.78Z"/>
+                                </svg>
+                            </div>
+                            <span>Dashboard monitoring real-time</span>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <!-- Credit Card Icon -->
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                    <path d="M20,8H4V6H20M20,18H4V12H20M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z"/>
+                                </svg>
+                            </div>
+                            <span>Sistem pembayaran retainer fleksibel</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="brand-footer">
+                    © 2026 TensorLease. All rights reserved.
+                </div>
+            </div>
+
+            <!-- Right Side - Forms -->
+            <div class="auth-forms">
+                <!-- LOGIN FORM -->
+                <div id="loginForm" class="form-container active">
+                    <div class="form-header">
+                        <h2 class="form-title">Masuk ke Akun</h2>
+                        <p class="form-subtitle">Selamat datang kembali! Silakan login untuk melanjutkan.</p>
+                    </div>
+
+                    <div class="error-message" id="loginError"></div>
+
+                    <form id="loginFormElement" onsubmit="handleLogin(event)">
+                        <div class="form-group">
+                            <label class="form-label" for="loginEmail">Email Address</label>
+                            <input 
+                                type="email" 
+                                id="loginEmail" 
+                                class="form-input" 
+                                placeholder="nama@email.com"
+                                required
+                            >
+                            <div class="field-error" id="loginEmailError"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="loginPassword">Password</label>
+                            <div class="password-wrapper">
+                                <input 
+                                    type="password" 
+                                    id="loginPassword" 
+                                    class="form-input" 
+                                    placeholder="Masukkan password Anda"
+                                    required
+                                >
+                                <button type="button" class="toggle-password" onclick="togglePassword('loginPassword')" aria-label="Toggle password visibility">
+                                    <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                        <path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="field-error" id="loginPasswordError"></div>
+                        </div>
+
+                        <div class="form-check">
+                            <input type="checkbox" id="rememberMe">
+                            <label for="rememberMe">Ingat saya</label>
+                        </div>
+
+                        <button type="submit" class="btn-primary" id="loginButton">
+                            Masuk
+                        </button>
+                    </form>
+
+                    <div class="form-divider">atau</div>
+
+                    <div class="form-switch">
+                        Belum punya akun? <a onclick="switchForm('register')">Daftar sekarang</a>
+                    </div>
+                </div>
+
+                <!-- REGISTER FORM -->
+                <div id="registerForm" class="form-container">
+                    <div class="form-header">
+                        <h2 class="form-title">Buat Akun Baru</h2>
+                        <p class="form-subtitle">Bergabunglah dengan TensorLease dan akses GPU berkinerja tinggi.</p>
+                    </div>
+
+                    <div class="error-message" id="registerError"></div>
+                    <div class="success-message" id="registerSuccess"></div>
+
+                    <form id="registerFormElement" onsubmit="handleRegister(event)">
+                        <div class="form-group">
+                            <label class="form-label" for="registerName">Nama Lengkap</label>
+                            <input 
+                                type="text" 
+                                id="registerName" 
+                                class="form-input" 
+                                placeholder="John Doe"
+                                required
+                            >
+                            <div class="field-error" id="registerNameError"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="registerEmail">Email Address</label>
+                            <input 
+                                type="email" 
+                                id="registerEmail" 
+                                class="form-input" 
+                                placeholder="nama@email.com"
+                                required
+                            >
+                            <div class="field-error" id="registerEmailError"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="registerPhone">Nomor Telepon</label>
+                            <div class="phone-input-wrapper">
+                                <input 
+                                    type="text" 
+                                    class="country-code" 
+                                    value="+62" 
+                                    readonly
+                                >
+                                <input 
+                                    type="tel" 
+                                    id="registerPhone" 
+                                    class="form-input phone-number" 
+                                    placeholder="812-3456-7890"
+                                    required
+                                >
+                            </div>
+                            <div class="field-error" id="registerPhoneError"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="registerPassword">Password</label>
+                            <div class="password-wrapper">
+                                <input 
+                                    type="password" 
+                                    id="registerPassword" 
+                                    class="form-input" 
+                                    placeholder="Minimal 8 karakter"
+                                    required
+                                >
+                                <button type="button" class="toggle-password" onclick="togglePassword('registerPassword')" aria-label="Toggle password visibility">
+                                    <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                        <path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="field-error" id="registerPasswordError"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="registerPasswordConfirm">Konfirmasi Password</label>
+                            <div class="password-wrapper">
+                                <input 
+                                    type="password" 
+                                    id="registerPasswordConfirm" 
+                                    class="form-input" 
+                                    placeholder="Ulangi password Anda"
+                                    required
+                                >
+                                <button type="button" class="toggle-password" onclick="togglePassword('registerPasswordConfirm')" aria-label="Toggle password visibility">
+                                    <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                        <path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="field-error" id="registerPasswordConfirmError"></div>
+                        </div>
+
+                        <div class="form-check">
+                            <input type="checkbox" id="agreeTerms" required>
+                            <label for="agreeTerms">Saya setuju dengan <a href="#" style="color: var(--primary);">Syarat & Ketentuan</a></label>
+                        </div>
+
+                        <button type="submit" class="btn-primary" id="registerButton">
+                            Daftar Sekarang
+                        </button>
+                    </form>
+
+                    <div class="form-divider">atau</div>
+
+                    <div class="form-switch">
+                        Sudah punya akun? <a onclick="switchForm('login')">Masuk di sini</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Switch between Login and Register forms
+        function switchForm(formType) {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            
+            if (formType === 'register') {
+                loginForm.classList.remove('active');
+                registerForm.classList.add('active');
+                // Clear login form
+                document.getElementById('loginFormElement').reset();
+                hideError('loginError');
+            } else {
+                registerForm.classList.remove('active');
+                loginForm.classList.add('active');
+                // Clear register form
+                document.getElementById('registerFormElement').reset();
+                hideError('registerError');
+                hideSuccess('registerSuccess');
+            }
+        }
+
+        // Toggle password visibility
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const button = input.nextElementSibling;
+            const svg = button.querySelector('svg');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                // Change to eye-off icon
+                svg.innerHTML = '<path d="M11.83,9L15,12.16C15,12.11 15,12.05 15,12A3,3 0 0,0 12,9C11.94,9 11.89,9 11.83,9M7.53,9.8L9.08,11.35C9.03,11.56 9,11.77 9,12A3,3 0 0,0 12,15C12.22,15 12.44,14.97 12.65,14.92L14.2,16.47C13.53,16.8 12.79,17 12,17A5,5 0 0,1 7,12C7,11.21 7.2,10.47 7.53,9.8M2,4.27L4.28,6.55L4.73,7C3.08,8.3 1.78,10 1,12C2.73,16.39 7,19.5 12,19.5C13.55,19.5 15.03,19.2 16.38,18.66L16.81,19.08L19.73,22L21,20.73L3.27,3M12,7A5,5 0 0,1 17,12C17,12.64 16.87,13.26 16.64,13.82L19.57,16.75C21.07,15.5 22.27,13.86 23,12C21.27,7.61 17,4.5 12,4.5C10.6,4.5 9.26,4.75 8,5.2L10.17,7.35C10.74,7.13 11.35,7 12,7Z"/>';
+            } else {
+                input.type = 'password';
+                // Change to eye icon
+                svg.innerHTML = '<path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z"/>';
+            }
+        }
+
+        // Show error message
+        function showError(elementId, message) {
+            const errorElement = document.getElementById(elementId);
+            errorElement.textContent = message;
+            errorElement.classList.add('show');
+        }
+
+        // Hide error message
+        function hideError(elementId) {
+            const errorElement = document.getElementById(elementId);
+            errorElement.classList.remove('show');
+        }
+
+        // Show success message
+        function showSuccess(elementId, message) {
+            const successElement = document.getElementById(elementId);
+            successElement.textContent = message;
+            successElement.classList.add('show');
+        }
+
+        // Hide success message
+        function hideSuccess(elementId) {
+            const successElement = document.getElementById(elementId);
+            successElement.classList.remove('show');
+        }
+
+        // Show field error
+        function showFieldError(inputId, errorId, message) {
+            const input = document.getElementById(inputId);
+            const error = document.getElementById(errorId);
+            input.classList.add('input-error');
+            error.textContent = message;
+            error.classList.add('show');
+        }
+
+        // Hide field error
+        function hideFieldError(inputId, errorId) {
+            const input = document.getElementById(inputId);
+            const error = document.getElementById(errorId);
+            input.classList.remove('input-error');
+            error.classList.remove('show');
+        }
+
+        // Validate email format
+        function isValidEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+        // Validate phone number (Indonesia)
+        function isValidPhone(phone) {
+            const re = /^[0-9]{9,13}$/;
+            return re.test(phone.replace(/[-\s]/g, ''));
+        }
+
+        // Handle Login
+        function handleLogin(event) {
+            event.preventDefault();
+            
+            // Get form values
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const loginButton = document.getElementById('loginButton');
+            
+            // Reset errors
+            hideError('loginError');
+            hideFieldError('loginEmail', 'loginEmailError');
+            hideFieldError('loginPassword', 'loginPasswordError');
+            
+            // Validate
+            let isValid = true;
+            
+            if (!email) {
+                showFieldError('loginEmail', 'loginEmailError', 'Email wajib diisi');
+                isValid = false;
+            } else if (!isValidEmail(email)) {
+                showFieldError('loginEmail', 'loginEmailError', 'Format email tidak valid');
+                isValid = false;
+            }
+            
+            if (!password) {
+                showFieldError('loginPassword', 'loginPasswordError', 'Password wajib diisi');
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                return;
+            }
+            
+            // Show loading state
+            loginButton.classList.add('btn-loading');
+            loginButton.textContent = '';
+            
+            // Simulate API call
+            setTimeout(() => {
+                loginButton.classList.remove('btn-loading');
+                loginButton.textContent = 'Masuk';
+                
+                // Simulate success (in real app, check API response)
+                const simulateSuccess = Math.random() > 0.5;
+                
+                if (simulateSuccess) {
+                    // Success - redirect to dashboard
+                    alert('Login berhasil! Mengarahkan ke dashboard...');
+                    // In real app: window.location.href = '/dashboard';
+                } else {
+                    // Error
+                    showError('loginError', 'Email atau password yang Anda masukkan salah. Silakan coba lagi.');
+                }
+            }, 2000);
+        }
+
+        // Handle Register
+        function handleRegister(event) {
+            event.preventDefault();
+            
+            // Get form values
+            const name = document.getElementById('registerName').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const phone = document.getElementById('registerPhone').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+            const agreeTerms = document.getElementById('agreeTerms').checked;
+            const registerButton = document.getElementById('registerButton');
+            
+            // Reset errors
+            hideError('registerError');
+            hideSuccess('registerSuccess');
+            hideFieldError('registerName', 'registerNameError');
+            hideFieldError('registerEmail', 'registerEmailError');
+            hideFieldError('registerPhone', 'registerPhoneError');
+            hideFieldError('registerPassword', 'registerPasswordError');
+            hideFieldError('registerPasswordConfirm', 'registerPasswordConfirmError');
+            
+            // Validate
+            let isValid = true;
+            
+            if (!name) {
+                showFieldError('registerName', 'registerNameError', 'Nama lengkap wajib diisi');
+                isValid = false;
+            }
+            
+            if (!email) {
+                showFieldError('registerEmail', 'registerEmailError', 'Email wajib diisi');
+                isValid = false;
+            } else if (!isValidEmail(email)) {
+                showFieldError('registerEmail', 'registerEmailError', 'Format email tidak valid');
+                isValid = false;
+            }
+            
+            if (!phone) {
+                showFieldError('registerPhone', 'registerPhoneError', 'Nomor telepon wajib diisi');
+                isValid = false;
+            } else if (!isValidPhone(phone)) {
+                showFieldError('registerPhone', 'registerPhoneError', 'Format nomor telepon tidak valid');
+                isValid = false;
+            }
+            
+            if (!password) {
+                showFieldError('registerPassword', 'registerPasswordError', 'Password wajib diisi');
+                isValid = false;
+            } else if (password.length < 8) {
+                showFieldError('registerPassword', 'registerPasswordError', 'Password minimal 8 karakter');
+                isValid = false;
+            }
+            
+            if (!passwordConfirm) {
+                showFieldError('registerPasswordConfirm', 'registerPasswordConfirmError', 'Konfirmasi password wajib diisi');
+                isValid = false;
+            } else if (password !== passwordConfirm) {
+                showFieldError('registerPasswordConfirm', 'registerPasswordConfirmError', 'Password tidak cocok');
+                isValid = false;
+            }
+            
+            if (!agreeTerms) {
+                showError('registerError', 'Anda harus menyetujui Syarat & Ketentuan');
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                return;
+            }
+            
+            // Show loading state
+            registerButton.classList.add('btn-loading');
+            registerButton.textContent = '';
+            
+            // Simulate API call
+            setTimeout(() => {
+                registerButton.classList.remove('btn-loading');
+                registerButton.textContent = 'Daftar Sekarang';
+                
+                // Simulate success (in real app, check API response)
+                const simulateSuccess = Math.random() > 0.3;
+                
+                if (simulateSuccess) {
+                    // Success
+                    showSuccess('registerSuccess', 'Registrasi berhasil! Mengarahkan ke dashboard...');
+                    document.getElementById('registerFormElement').reset();
+                    
+                    // Redirect after 2 seconds
+                    setTimeout(() => {
+                        alert('Akun berhasil dibuat! Mengarahkan ke dashboard...');
+                        // In real app: window.location.href = '/dashboard';
+                    }, 2000);
+                } else {
+                    // Error - email already exists
+                    showError('registerError', 'Email sudah terdaftar. Silakan gunakan email lain atau login.');
+                }
+            }, 2000);
+        }
+
+        // Real-time validation for email
+        document.getElementById('loginEmail')?.addEventListener('blur', function() {
+            const email = this.value.trim();
+            if (email && !isValidEmail(email)) {
+                showFieldError('loginEmail', 'loginEmailError', 'Format email tidak valid');
+            } else {
+                hideFieldError('loginEmail', 'loginEmailError');
+            }
+        });
+
+        document.getElementById('registerEmail')?.addEventListener('blur', function() {
+            const email = this.value.trim();
+            if (email && !isValidEmail(email)) {
+                showFieldError('registerEmail', 'registerEmailError', 'Format email tidak valid');
+            } else {
+                hideFieldError('registerEmail', 'registerEmailError');
+            }
+        });
+
+        // Real-time validation for password confirmation
+        document.getElementById('registerPasswordConfirm')?.addEventListener('input', function() {
+            const password = document.getElementById('registerPassword').value;
+            const passwordConfirm = this.value;
+            
+            if (passwordConfirm && password !== passwordConfirm) {
+                showFieldError('registerPasswordConfirm', 'registerPasswordConfirmError', 'Password tidak cocok');
+            } else {
+                hideFieldError('registerPasswordConfirm', 'registerPasswordConfirmError');
+            }
+        });
+    </script>
+</body>
+</html>
