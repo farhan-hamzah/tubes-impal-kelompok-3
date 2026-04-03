@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TensorLease | Secure Authentication</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container-lowest": "#060e20",
+                        "on-tertiary-fixed-variant": "#832600",
+                        "error-container": "#93000a",
+                        "surface-container-low": "#131b2e",
+                        "secondary-container": "#5203d5",
+                        "primary": "#4cd6ff",
+                        "secondary-fixed-dim": "#cdbdff",
+                        "on-surface-variant": "#c2c6d8",
+                        "secondary": "#cdbdff",
+                        "on-primary": "#003543",
+                        "surface-tint": "#4cd6ff",
+                        "surface-dim": "#0b1326",
+                        "on-secondary-fixed": "#20005f",
+                        "on-primary-fixed": "#001f28",
+                        "surface": "#0b1326",
+                        "on-secondary-container": "#c0acff",
+                        "on-error": "#690005",
+                        "outline-variant": "#424656",
+                        "surface-bright": "#31394d",
+                        "inverse-on-surface": "#283044",
+                        "tertiary-container": "#cc4204",
+                        "on-secondary-fixed-variant": "#4f00d0",
+                        "on-background": "#dae2fd",
+                        "primary-fixed-dim": "#4cd6ff",
+                        "tertiary-fixed": "#ffdbd0",
+                        "on-primary-fixed-variant": "#004e60",
+                        "on-tertiary": "#5d1900",
+                        "surface-container-high": "#222a3d",
+                        "on-primary-container": "#effaff",
+                        "background": "#0b1326",
+                        "surface-variant": "#2d3449",
+                        "on-secondary": "#370096",
+                        "secondary-fixed": "#e8deff",
+                        "inverse-primary": "#00677f",
+                        "outline": "#8c90a1",
+                        "surface-container": "#171f33",
+                        "tertiary": "#ffb59d",
+                        "surface-container-highest": "#2d3449",
+                        "on-tertiary-container": "#fff6f4",
+                        "on-surface": "#dae2fd",
+                        "error": "#ffb4ab",
+                        "primary-fixed": "#b7eaff",
+                        "on-tertiary-fixed": "#390c00",
+                        "on-error-container": "#ffdad6",
+                        "inverse-surface": "#dae2fd",
+                        "primary-container": "#007c98",
+                        "tertiary-fixed-dim": "#ffb59d"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+                },
+            },
+        }
+    </script>
+<style>
+        .kinetic-grid {
+            background-image: radial-gradient(circle at 2px 2px, rgba(76, 214, 255, 0.05) 1px, transparent 0);
+            background-size: 40px 40px;
+        }
+        .glass-panel {
+            background: rgba(45, 52, 73, 0.4);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(66, 70, 86, 0.15);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body min-h-screen flex items-center justify-center p-6 kinetic-grid">
+<!-- Auth Container -->
+<main class="w-full max-w-[1200px] grid grid-cols-1 md:grid-cols-2 gap-0 overflow-hidden rounded-xl bg-surface-container-lowest shadow-2xl">
+<!-- Branding & Illustration Side (Kinetic Monolith) -->
+<section class="hidden md:flex flex-col justify-between p-12 bg-surface-container-low relative overflow-hidden">
+<div class="relative z-10">
+<div class="flex items-center gap-3">
+<span class="text-primary font-headline font-black text-2xl tracking-widest">TensorLease</span>
+</div>
+<div class="mt-20">
+<h1 class="font-headline font-bold text-5xl leading-tight tracking-tight text-on-surface">
+                        Powering the <br/>
+<span class="text-primary bg-gradient-to-r from-primary to-primary-container bg-clip-text text-transparent">Next Generation</span><br/>
+                        of AI Compute.
+                    </h1>
+<p class="mt-6 text-on-surface-variant max-w-md text-lg leading-relaxed">
+                        Securely manage high-performance GPU clusters with enterprise-grade precision and real-time monitoring.
+                    </p>
+</div>
+</div>
+<!-- Kinetic Illustration -->
+<div class="absolute inset-0 opacity-40 pointer-events-none">
+<img alt="abstract visualization of neural network pathways" class="w-full h-full object-cover" data-alt="abstract high-tech visualization of neural network pathways and glowing nodes in deep blue and cyan electric light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD3Rp68ers_Eqv0wUshEOOanDIwrpgnXIeEkyDMelgdvkOK4GIyPaz2JWMpXOZvIx4SMIyVHLxK1jGGT9fCG8AEgol1EE76UsyngrL_wOgHphHmjttDT7pZhsHkkmjBkB63Bl0stOJyGQLLqPg8rOcGAHobKWzZSMBMwUEV1qZI5rK7rmnqGSmBeCHeVpjTE3npub2DsOjD5ZwwoxoR6-OtmeX4YzCW4c3XDi24lNLAofaff663Wh2Z0dYI4AqJeCdKk0OfML9fzx6D"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent"></div>
+</div>
+<div class="relative z-10 flex items-center gap-4">
+<div class="flex -space-x-3">
+<img alt="User 1" class="w-10 h-10 rounded-full border-2 border-surface-container-low" data-alt="professional male headshot with warm lighting and neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUAJZQqhsk7N7H1oLvRIl4UaVXvdasvOKS6_kcisAJULNJIwFrhgErplU_F8YH-mpLndn4BUSFLOnVHHZVbN-gf6TfJnIqhqf8zFoIFg8ytOAua-C2I4LNKbSewYV97U_OkSRW1zBgSTf4zuElrhr4uBjdTgckQ8Ou9q6Wh_-7tJMr99tK_f5biaxtfLJbux4aWyXPrBiHdy-DGyRHmsor3Vnk8o6qQd0O2C1NyiuwdxDt7yw2BoLNCnOdxRDiywCPrCh1g3S8L98X"/>
+<img alt="User 2" class="w-10 h-10 rounded-full border-2 border-surface-container-low" data-alt="professional female headshot smiling with bright outdoor lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDWnpYvlJ8WLtYfb7exKrs_eUoGQWNbXordTjLIQPdZITpg6tZLYPCJpVaUENEg4mQCNlBM7n5f1RpFiMF8YkGD8gb-XYSbOIw2a4PPGopwyaFpZMRl76YsME8Uj1wyKVH1nhlZOqEhAzXf3tv4UrtUPcEHzKTatyKWhJ0-MlyaXoc15Bv9q5kbRESAKGRe5TApmjisLjMQWWfuvul9WU1u4JGEV8QMaIV_8YxngbaN7AvPU85fycB5S29Z_nKi_2h0Kcba-lzB1FXf"/>
+</div>
+<p class="text-xs text-on-surface-variant font-medium">Trusted by 500+ Deep Learning Labs</p>
+</div>
+</section>
+<!-- Login Form Side -->
+<section class="flex items-center justify-center p-8 md:p-16 bg-surface-container">
+<div class="w-full max-w-md">
+<div class="mb-10">
+<h2 class="text-2xl font-headline font-bold text-on-surface">Welcome back</h2>
+<p class="text-on-surface-variant mt-2">Enter your credentials to access your console.</p>
+</div>
+<!-- Error State Notification -->
+<div class="mb-6 p-4 rounded-lg bg-error-container/20 border-l-4 border-error flex items-start gap-3">
+<span class="material-symbols-outlined text-error text-xl">report</span>
+<div>
+<p class="text-sm font-medium text-error">Invalid credentials</p>
+<p class="text-xs text-error/80 mt-0.5">Please check your email and password and try again.</p>
+</div>
+</div>
+<form class="space-y-6">
+<!-- Role Selector -->
+<div class="grid grid-cols-2 gap-4">
+<label class="relative cursor-pointer group">
+<input checked="" class="peer sr-only" name="role" type="radio" value="client"/>
+<div class="p-4 rounded-xl border border-outline-variant/30 bg-surface-container-low peer-checked:border-primary peer-checked:bg-primary/5 transition-all flex flex-col items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant peer-checked:text-primary">person</span>
+<span class="text-xs font-semibold text-on-surface-variant group-hover:text-on-surface transition-colors">Client</span>
+</div>
+</label>
+<label class="relative cursor-pointer group">
+<input class="peer sr-only" name="role" type="radio" value="admin"/>
+<div class="p-4 rounded-xl border border-outline-variant/30 bg-surface-container-low peer-checked:border-primary peer-checked:bg-primary/5 transition-all flex flex-col items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant peer-checked:text-primary">admin_panel_settings</span>
+<span class="text-xs font-semibold text-on-surface-variant group-hover:text-on-surface transition-colors">Admin</span>
+</div>
+</label>
+</div>
+<!-- Input: Email -->
+<div class="space-y-2">
+<label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant ml-1" for="email">Email Address</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-lg">mail</span>
+<input class="w-full bg-surface-container-low border-none rounded-xl py-4 pl-12 pr-4 text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-primary/50 transition-all" id="email" placeholder="name@company.com" type="email"/>
+</div>
+</div>
+<!-- Input: Password -->
+<div class="space-y-2">
+<div class="flex justify-between items-center px-1">
+<label class="text-xs font-bold uppercase tracking-wider text-on-surface-variant" for="password">Password</label>
+<a class="text-xs font-medium text-primary hover:underline transition-all" href="#">Forgot Password?</a>
+</div>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-lg">lock</span>
+<input class="w-full bg-surface-container-low border-none rounded-xl py-4 pl-12 pr-4 text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-primary/50 transition-all" id="password" placeholder="••••••••" type="password"/>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-outline text-lg cursor-pointer hover:text-on-surface transition-colors">visibility</span>
+</div>
+</div>
+<!-- Remember Me -->
+<div class="flex items-center gap-3 px-1">
+<input class="w-5 h-5 rounded border-outline-variant bg-surface-container-low text-primary focus:ring-primary focus:ring-offset-surface" id="remember" type="checkbox"/>
+<label class="text-sm text-on-surface-variant cursor-pointer select-none" for="remember">Remember this session</label>
+</div>
+<!-- Submit Button -->
+<button class="w-full py-4 rounded-xl bg-gradient-to-br from-primary to-primary-container text-on-primary font-bold text-lg hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-primary/20 mt-4" type="submit">
+                        Login
+                    </button>
+</form>
+<!-- Footer Links -->
+<div class="mt-12 text-center">
+<p class="text-sm text-on-surface-variant">
+                        Don't have an account? <a class="text-primary font-semibold hover:underline" href="login.html">Request Access</a>
+</p>
+</div>
+</div>
+</section>
+</main>
+<!-- GPU Floating Element (Decorative Background) -->
+<div class="fixed bottom-[-10%] right-[-5%] w-[40%] h-[60%] pointer-events-none opacity-10">
+<img alt="detailed view of a high-performance GPU circuit board" class="w-full h-full object-contain" data-alt="ultra close-up of a sophisticated computer graphics card with illuminated circuits and heat sinks in metallic blue and black" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCpazRFP8uh4LVh_xJoSXNTYOoyWxi01F3vTd_LZiDCUFknLWQ7S9ACtrmosEOkF0RwLgsOXuSpvId0PDAHm6ftqIshc6zV24B9WbHPHIN6f9Hx7wWUTNo1UZHqEKbRBfJmUipnKPUO0iAbCfc47ORhsxFMNgf_mmwhCe34aw1WIN2Zu3ipi3oPXBNltNq6E9Oi4sQw6yDc-dDSUb0OHXem-tfKsdk47_NMNMK0Mp23o7uwlAUWXUoMotMSbpMs6sLS212dYz2ESAFT"/>
+</div>
+</body></html>

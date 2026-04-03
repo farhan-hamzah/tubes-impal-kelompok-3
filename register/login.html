@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Client Registration | TensorLease</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container-lowest": "#060e20",
+                        "on-tertiary-fixed-variant": "#832600",
+                        "error-container": "#93000a",
+                        "surface-container-low": "#131b2e",
+                        "secondary-container": "#5203d5",
+                        "primary": "#4cd6ff",
+                        "secondary-fixed-dim": "#cdbdff",
+                        "on-surface-variant": "#c2c6d8",
+                        "secondary": "#cdbdff",
+                        "on-primary": "#003543",
+                        "surface-tint": "#4cd6ff",
+                        "surface-dim": "#0b1326",
+                        "on-secondary-fixed": "#20005f",
+                        "on-primary-fixed": "#001f28",
+                        "surface": "#0b1326",
+                        "on-secondary-container": "#c0acff",
+                        "on-error": "#690005",
+                        "outline-variant": "#424656",
+                        "surface-bright": "#31394d",
+                        "inverse-on-surface": "#283044",
+                        "tertiary-container": "#cc4204",
+                        "on-secondary-fixed-variant": "#4f00d0",
+                        "on-background": "#dae2fd",
+                        "primary-fixed-dim": "#4cd6ff",
+                        "tertiary-fixed": "#ffdbd0",
+                        "on-primary-fixed-variant": "#004e60",
+                        "on-tertiary": "#5d1900",
+                        "surface-container-high": "#222a3d",
+                        "on-primary-container": "#effaff",
+                        "background": "#0b1326",
+                        "surface-variant": "#2d3449",
+                        "on-secondary": "#370096",
+                        "secondary-fixed": "#e8deff",
+                        "inverse-primary": "#00677f",
+                        "outline": "#8c90a1",
+                        "surface-container": "#171f33",
+                        "tertiary": "#ffb59d",
+                        "surface-container-highest": "#2d3449",
+                        "on-tertiary-container": "#fff6f4",
+                        "on-surface": "#dae2fd",
+                        "error": "#ffb4ab",
+                        "primary-fixed": "#b7eaff",
+                        "on-tertiary-fixed": "#390c00",
+                        "on-error-container": "#ffdad6",
+                        "inverse-surface": "#dae2fd",
+                        "primary-container": "#007c98",
+                        "tertiary-fixed-dim": "#ffb59d"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(45, 52, 73, 0.4);
+            backdrop-filter: blur(20px);
+        }
+        .kinetic-grid {
+            background-image: radial-gradient(circle at 2px 2px, rgba(76, 214, 255, 0.05) 1px, transparent 0);
+            background-size: 40px 40px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body min-h-screen selection:bg-primary/30">
+<!-- TopNavBar: Execution of Shared Components JSON -->
+<nav class="bg-[#0b1326] flex justify-between items-center w-full px-6 h-16 fixed top-0 z-50">
+<div class="flex items-center gap-8">
+<span class="text-xl font-black text-[#4cd6ff] tracking-widest font-['Manrope']">TensorLease</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-[#c2c6d8] hover:bg-[#222a3d] transition-colors p-2 rounded-lg active:scale-95 duration-150">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-[#c2c6d8] hover:bg-[#222a3d] transition-colors p-2 rounded-lg active:scale-95 duration-150">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center border border-outline-variant/20 overflow-hidden">
+<img alt="User profile avatar" data-alt="minimalist user avatar placeholder with geometric background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3efWh6QLr32d7GtbODf7hR6npR6cCESyPd1G_CUQfIPwdb_FCfixpy5YPlqFvVYHJS8-rpNQcgyCMIKi5kK16NmeFu8dBap-b_mpLhh5tTWeZK3ysGY-GA5vipfR9TiUqHussKxU4aHXsziiDPXgkcr7YkN0drb6kXe-wtlqOUGelIketjkBkLzxSzfHNVgvwAlCNrCBDwfWvXSAKnJmIgUqOmheJw3UNTqTmVWSYXTqzabeFio9eayC9sciNjCB95btxVl8ydaok"/>
+</div>
+</div>
+</nav>
+<main class="pt-16 min-h-screen flex items-center justify-center kinetic-grid px-4">
+<div class="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-center py-12">
+<!-- Left Column: Branding & Value Prop -->
+<div class="lg:col-span-5 space-y-8">
+<div class="space-y-4">
+<span class="inline-block px-3 py-1 bg-primary/10 text-primary text-xs font-bold tracking-widest uppercase rounded">HPC Access Control</span>
+<h1 class="text-5xl lg:text-6xl font-headline font-extrabold tracking-tight leading-tight text-on-background">
+                        Powering <br/><span class="text-primary italic">Intelligence</span>
+</h1>
+<p class="text-on-surface-variant text-lg max-w-md leading-relaxed">
+                        Join the next generation of high-performance computing infrastructure. Deploy workloads in seconds across our globally distributed kinetic cluster.
+                    </p>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-surface-container p-6 rounded-xl space-y-2">
+<span class="text-primary font-headline text-3xl font-bold">99.9%</span>
+<p class="text-on-surface-variant text-sm font-medium">Uptime SLA</p>
+</div>
+<div class="bg-surface-container p-6 rounded-xl space-y-2 border-l-2 border-primary">
+<span class="text-primary font-headline text-3xl font-bold">1.2ms</span>
+<p class="text-on-surface-variant text-sm font-medium">Avg Latency</p>
+</div>
+</div>
+<div class="flex items-center gap-4 py-4">
+<div class="flex -space-x-3">
+<img alt="Client 1" class="w-10 h-10 rounded-full border-2 border-surface" data-alt="Portrait of a diverse tech executive in a professional setting with soft blue lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-fRF0hbB5SKEF3nmjVa7ZL4eWP4yWwP9O3fp7wXSX9EtXDQpdE4mg7AdKBrLNpLtwQD3deXhnLQMtbqgUBNALauhJadESdhnUYzhGzF6316H8wQ7ouRYpk1_heX6Jwz_5FRUdsIMgP7-yt9C4RaWXJRcR4gTR5KBFLHY5e4tr14K1ChI_IrWTOSY31q1yc8pn9Kdq3gHv4OwqjkWvQRVadzjgr36tG5jV8-nzTisPupSsLg6OxnKy1HpBw833xFTFpp12MlMvGEHH"/>
+<img alt="Client 2" class="w-10 h-10 rounded-full border-2 border-surface" data-alt="Portrait of a female engineer in a modern workspace with neon accents" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBOu2yucLOqvvZQ8wnnN1pglhwE5CT-hykV_QydhIb1Sjkh3VZNFpQv8HJQYjTqMq8hKDlfXGVxCMH0nYmF9qVQZ0N-Lis1Vs6JLXiD3uxWFOmrMgHlw2tIi8FjSo3Dz_-pgG3D-5qKS3by_eVdgdru-QgkPXzkyHnh8oz6Rm2fMfKoWb8Kv5XqVU3ffsE1firYOVDAxswX-3LyGWxRTLUUe8HoGR5YX-POfoEsTtcGW27Q-4_VWijVYboCdnZVdwEXg4lCgbh1zt77"/>
+<img alt="Client 3" class="w-10 h-10 rounded-full border-2 border-surface" data-alt="Portrait of a technical director in a server room environment with dramatic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDC6Bg9G7bttqKCvBKJtsPs1HMTf8dUd5bNJRFhlyWFjkNxnbIKeSMPTfJTUm1QJ6Cw_YXurCJOJtiFJXX0OqnDAFHTXeOuU7wtEzjH1Ke9Gp5Co61gePqh0Bx3MrAkbdQlqKKyVMqbjUOLOlEorVx54MBvS3cn5tkZiL7wTJNoXWgsRwD_XaHifmE8_8C8_f2qqBjOXyYweDtgKW7qHb74cgbcl5SLlJ9oxiM_ak1h1TxZvrlE4kVCWXS-GxswU7VcvXOMOy0HhqlP"/>
+</div>
+<span class="text-on-surface-variant text-sm font-medium">Trusted by 500+ HPC teams</span>
+</div>
+</div>
+<!-- Right Column: Registration Card -->
+<div class="lg:col-span-7">
+<div class="bg-surface-container-low p-8 lg:p-12 rounded-xl border border-outline-variant/10 relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl rounded-full"></div>
+<div class="mb-10">
+<h2 class="text-3xl font-headline font-bold mb-2">Create Account</h2>
+<p class="text-on-surface-variant">Provision your workspace on the TensorLease network.</p>
+</div>
+<form class="space-y-6">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Full Name -->
+<div class="space-y-2">
+<label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant" for="full_name">Full Name</label>
+<div class="relative">
+<input class="w-full bg-surface-container border-none rounded-md px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-on-surface-variant/30" id="full_name" placeholder="John Doe" type="text"/>
+<span class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+<!-- Company -->
+<div class="space-y-2">
+<label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant" for="company">Company</label>
+<input class="w-full bg-surface-container border-none rounded-md px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-on-surface-variant/30" id="company" placeholder="Neural Dynamics Inc." type="text"/>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Email -->
+<div class="space-y-2">
+<label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant" for="email">Work Email</label>
+<input class="w-full bg-surface-container border-none rounded-md px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-on-surface-variant/30" id="email" placeholder="j.doe@neuraldynamics.ai" type="email"/>
+</div>
+<!-- Phone -->
+<div class="space-y-2">
+<label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant" for="phone">Phone Number</label>
+<input class="w-full bg-surface-container border-none rounded-md px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-on-surface-variant/30" id="phone" placeholder="+1 (555) 000-0000" type="tel"/>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Password -->
+<div class="space-y-2">
+<label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant" for="password">Password</label>
+<input class="w-full bg-surface-container border-none rounded-md px-4 py-3 text-on-surface focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-on-surface-variant/30" id="password" placeholder="••••••••" type="password"/>
+<div class="flex gap-1 mt-1">
+<div class="h-1 flex-1 bg-primary rounded-full"></div>
+<div class="h-1 flex-1 bg-primary rounded-full"></div>
+<div class="h-1 flex-1 bg-primary rounded-full"></div>
+<div class="h-1 flex-1 bg-surface-container-high rounded-full"></div>
+</div>
+</div>
+<!-- Confirm Password -->
+<div class="space-y-2">
+<label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant" for="confirm_password">Confirm Password</label>
+<div class="relative">
+<input class="w-full bg-surface-container-high border border-error/30 rounded-md px-4 py-3 text-on-surface focus:ring-2 focus:ring-error/50 transition-all placeholder:text-on-surface-variant/30" id="confirm_password" placeholder="••••••••" type="password"/>
+<span class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-error text-sm">error</span>
+</div>
+<p class="text-error text-[10px] font-medium uppercase tracking-tighter">Passwords do not match</p>
+</div>
+</div>
+<div class="flex items-center gap-3 pt-2">
+<input class="w-4 h-4 bg-surface-container border-none rounded text-primary focus:ring-primary focus:ring-offset-background" id="terms" type="checkbox"/>
+<label class="text-sm text-on-surface-variant" for="terms">I agree to the <a class="text-primary hover:underline" href="#">Service Level Agreement</a> and Privacy Policy.</label>
+</div>
+<div class="pt-6">
+<button class="w-full bg-primary text-on-primary font-bold py-4 rounded-md hover:bg-primary/90 transition-all active:scale-[0.98] flex items-center justify-center gap-2 group" type="submit">
+                                Register
+                                <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+</div>
+</form>
+<div class="mt-8 pt-8 border-t border-outline-variant/10 text-center">
+<p class="text-on-surface-variant text-sm">
+                            Already have an organization? <a class="text-primary font-bold hover:underline" href="registrasi.html">Log in to Console</a>
+</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Decorative background elements -->
+<div class="fixed bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
+<div class="fixed top-0 right-0 w-1/3 h-screen bg-gradient-to-l from-primary/5 to-transparent pointer-events-none"></div>
+</body></html>
