@@ -36,6 +36,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/client/**").hasRole("CLIENT")
                 .requestMatchers("/api/paket/**").authenticated()
                 .requestMatchers("/api/kontrak/**").authenticated()
+                .requestMatchers("/api/payment/notification").permitAll() // webhook Midtrans
+                .requestMatchers("/api/payment/**").authenticated()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

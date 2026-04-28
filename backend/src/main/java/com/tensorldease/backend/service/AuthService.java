@@ -1,18 +1,26 @@
 package com.tensorldease.backend.service;
 
+import com.tensorldease.backend.dto.request.ForgotPasswordRequest;
 import com.tensorldease.backend.dto.request.LoginRequest;
 import com.tensorldease.backend.dto.request.RegisterRequest;
+import com.tensorldease.backend.dto.request.ResetPasswordRequest;
 import com.tensorldease.backend.dto.response.LoginResponse;
 import com.tensorldease.backend.dto.response.UserResponse;
 import com.tensorldease.backend.model.Client;
+import com.tensorldease.backend.model.PasswordResetToken;
 import com.tensorldease.backend.model.User;
 import com.tensorldease.backend.repository.ClientRepository;
+import com.tensorldease.backend.repository.PasswordResetTokenRepository;
 import com.tensorldease.backend.repository.UserRepository;
 import com.tensorldease.backend.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
+import java.time.LocalDateTime;
 import java.util.UUID;
+import com.tensorldease.backend.model.SessionToken;
+import com.tensorldease.backend.repository.SessionTokenRepository;
 
 @Service
 public class AuthService {
@@ -28,6 +36,67 @@ public class AuthService {
 
     @Autowired
     private JwtUtil jwtUtil;
+
+    @Autowired
+    private PasswordResetTokenRepository passwordResetTokenRepository;
+
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private SessionTokenRepository sessionTokenRepository;
+
+    @Value("${app.jwt.expiration}")
+    private long jwtExpiration;
+    
+    // Lupa Password - Request Reset
+    public void forgotPassword(ForgotPasswordRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+            .orElseThrow(() -> new RuntimeException("Email tidak terdaftar!"));
+
+        // Hapus token lama kalau ada
+        passwordResetTokenRepository.deleteByUserUserId(user.getUserId());
+
+        // Generate token unik
+        String token = UUID.randomUUID().toString();
+
+        // Simpan token ke DB
+        PasswordResetToken resetToken = new PasswordResetToken();
+        resetToken.setUser(user);
+        resetToken.setToken(token);
+        resetToken.setExpiredAt(LocalDateTime.now().plusMinutes(15));
+        resetToken.setIsUsed(false);
+        passwordResetTokenRepository.save(resetToken);
+
+        // Kirim email
+        emailService.sendResetPasswordEmail(user.getEmail(), token);
+    }
+
+    // Reset Password dengan token
+    public void resetPassword(ResetPasswordRequest request) {
+        PasswordResetToken resetToken = passwordResetTokenRepository
+            .findByToken(request.getToken())
+            .orElseThrow(() -> new RuntimeException("Token tidak valid!"));
+
+        // Cek token expired
+        if (resetToken.getExpiredAt().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Token sudah expired! Minta reset password lagi.");
+        }
+
+        // Cek token sudah dipakai
+        if (resetToken.getIsUsed()) {
+            throw new RuntimeException("Token sudah digunakan!");
+        }
+
+        // Update password
+        User user = resetToken.getUser();
+        user.setPassword(passwordEncoder.encode(request.getPasswordBaru()));
+        userRepository.save(user);
+
+        // Tandai token sudah dipakai
+        resetToken.setIsUsed(true);
+        passwordResetTokenRepository.save(resetToken);
+    }
 
     public UserResponse register(RegisterRequest request) {
         // Cek email sudah terdaftar
@@ -63,31 +132,41 @@ public class AuthService {
     }
 
     public LoginResponse login(LoginRequest request) {
-        // Cek email ada
         User user = userRepository.findByEmail(request.getEmail())
             .orElseThrow(() -> new RuntimeException("Email atau password salah!"));
 
-        // Cek password
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new RuntimeException("Email atau password salah!");
         }
 
-        // Cek akun aktif
         if (!user.getIsActive()) {
             throw new RuntimeException("Akun tidak aktif!");
         }
 
-        // Generate JWT token
         String token = jwtUtil.generateToken(
             user.getEmail(),
             user.getUserRole().name()
         );
+        SessionToken sessionToken = new SessionToken();
+        sessionToken.setTokenId(UUID.randomUUID().toString());
+        sessionToken.setUser(user);
+        sessionToken.setToken(token);
+        sessionToken.setExpiredAt(LocalDateTime.now().plus(jwtExpiration, java.time.temporal.ChronoUnit.MILLIS)); // sama dengan JWT expiry
+        sessionTokenRepository.save(sessionToken);
+        // Ambil clientId jika role CLIENT
+        String clientId = null;
+        if (user.getUserRole().name().equals("CLIENT")) {
+            clientId = clientRepository.findByUserUserId(user.getUserId())
+                .map(Client::getClientId)
+                .orElse(null);
+        }
 
         return new LoginResponse(
             token,
             user.getUserRole().name(),
             user.getNama(),
-            user.getEmail()
+            user.getEmail(),
+            clientId // tambah ini
         );
     }
 }

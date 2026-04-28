@@ -5,3 +5,4 @@ export const getAllKontrak = () => API.get('/admin/kontrak');
 export const getKontrakByStatus = (status) => API.get(`/admin/kontrak/status/${status}`);
 export const getKontrakById = (id) => API.get(`/kontrak/${id}`);
 export const getKontrakByClient = (clientId) => API.get(`/client/kontrak/${clientId}`);
+export const buatKontrakByClient = (data) => API.post('/client/kontrak', data);

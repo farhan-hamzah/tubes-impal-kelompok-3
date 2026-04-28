@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.UUID;
+import com.tensorldease.backend.repository.RiwayatTarifRepository;
+import com.tensorldease.backend.model.RiwayatTarif;
 
 @Service
 public class PaketHpcService {
@@ -16,6 +18,9 @@ public class PaketHpcService {
 
     @Autowired
     private KontrakRepository kontrakRepository;
+    
+    @Autowired
+    private RiwayatTarifRepository riwayatTarifRepository;
 
     // FR-07: Get semua paket
     public List<PaketHpc> getAllPaket() {
@@ -41,7 +46,15 @@ public class PaketHpcService {
     public PaketHpc updatePaket(String paketId, PaketHpc request) {
         PaketHpc paket = paketHpcRepository.findById(paketId)
             .orElseThrow(() -> new RuntimeException("Paket tidak ditemukan!"));
-
+        if (request.getTarif() != null && !request.getTarif().equals(paket.getTarif())) {
+            RiwayatTarif riwayat = new RiwayatTarif();
+            riwayat.setRiwayatId(UUID.randomUUID().toString());
+            riwayat.setPaketHpc(paket);
+            riwayat.setTarifLama(paket.getTarif());
+            riwayat.setTarifBaru(request.getTarif());
+            riwayat.setCatatanPerubahan("Update tarif");
+            riwayatTarifRepository.save(riwayat);
+        }
         if (request.getNamaPaket() != null) paket.setNamaPaket(request.getNamaPaket());
         if (request.getSpesifikasiGpu() != null) paket.setSpesifikasiGpu(request.getSpesifikasiGpu());
         if (request.getJumlahCpuCore() != null) paket.setJumlahCpuCore(request.getJumlahCpuCore());

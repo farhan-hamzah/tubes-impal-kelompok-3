@@ -9,4 +9,5 @@ import java.util.List;
 public interface KontrakRepository extends JpaRepository<Kontrak, String> {
     List<Kontrak> findByClientClientId(String clientId);
     List<Kontrak> findByStatus(String status);
+    boolean existsByClientClientIdAndStatusIn(String clientId, List<String> statuses);
 }

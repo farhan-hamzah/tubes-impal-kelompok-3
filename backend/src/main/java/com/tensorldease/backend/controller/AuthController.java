@@ -1,7 +1,9 @@
 package com.tensorldease.backend.controller;
 
+import com.tensorldease.backend.dto.request.ForgotPasswordRequest;
 import com.tensorldease.backend.dto.request.LoginRequest;
 import com.tensorldease.backend.dto.request.RegisterRequest;
+import com.tensorldease.backend.dto.request.ResetPasswordRequest;
 import com.tensorldease.backend.dto.response.LoginResponse;
 import com.tensorldease.backend.dto.response.UserResponse;
 import com.tensorldease.backend.service.AuthService;
@@ -38,4 +40,29 @@ public class AuthController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    // Lupa Password
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request) {
+        try {
+            authService.forgotPassword(request);
+            return ResponseEntity.ok("Email reset password telah dikirim!");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // Reset Password
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(
+        @Valid @RequestBody ResetPasswordRequest request) {
+        try {
+            authService.resetPassword(request);
+            return ResponseEntity.ok("Password berhasil direset!");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
 }

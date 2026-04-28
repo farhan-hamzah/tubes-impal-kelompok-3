@@ -1,11 +1,23 @@
 import { useState, useEffect } from 'react';
 import { getInvoiceByClient } from '../../api/invoice';
+import { getSnapToken } from '../../api/payment';
 import { useAuth } from '../../context/AuthContext';
 
 export default function RiwayatTransaksi() {
   const { user } = useAuth();
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [payingId, setPayingId] = useState(null); // track invoice yang sedang diproses
+
+  useEffect(() => {
+    // Load Midtrans Snap script sekali saat mount
+    const script = document.createElement('script');
+    script.src = 'https://app.sandbox.midtrans.com/snap/snap.js';
+    // Ganti ke https://app.midtrans.com/snap/snap.js untuk production
+    script.setAttribute('data-client-key', 'SB-Mid-client-XXXXXXXXXXXX');
+    document.body.appendChild(script);
+    return () => document.body.removeChild(script);
+  }, []);
 
   useEffect(() => {
     if (user?.clientId) fetchInvoice();
@@ -19,6 +31,35 @@ export default function RiwayatTransaksi() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBayar = async (invoiceId) => {
+    setPayingId(invoiceId);
+    try {
+      const res = await getSnapToken(invoiceId);
+      const { snapToken } = res.data;
+
+      window.snap.pay(snapToken, {
+        onSuccess: () => {
+          alert('Pembayaran berhasil!');
+          fetchInvoice(); // refresh list
+        },
+        onPending: () => {
+          alert('Pembayaran pending, menunggu konfirmasi.');
+          fetchInvoice();
+        },
+        onError: () => {
+          alert('Pembayaran gagal. Silakan coba lagi.');
+        },
+        onClose: () => {
+          console.log('Popup ditutup tanpa menyelesaikan pembayaran.');
+        },
+      });
+    } catch (err) {
+      alert('Gagal memulai pembayaran: ' + (err.response?.data || err.message));
+    } finally {
+      setPayingId(null);
     }
   };
 
@@ -57,6 +98,19 @@ export default function RiwayatTransaksi() {
                   <p>✅ Dibayar: {inv.tanggalPembayaran}</p>
                 )}
               </div>
+
+              {/* Tombol Bayar hanya muncul jika UNPAID */}
+              {inv.statusPembayaran === 'UNPAID' && (
+                <div className="mt-3">
+                  <button
+                    onClick={() => handleBayar(inv.invoiceId)}
+                    disabled={payingId === inv.invoiceId}
+                    className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {payingId === inv.invoiceId ? 'Memproses...' : '💳 Bayar Sekarang'}
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>

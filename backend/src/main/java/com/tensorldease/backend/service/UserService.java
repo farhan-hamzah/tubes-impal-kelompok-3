@@ -3,17 +3,26 @@ package com.tensorldease.backend.service;
 import com.tensorldease.backend.dto.request.UpdateProfilRequest;
 import com.tensorldease.backend.dto.response.UserResponse;
 import com.tensorldease.backend.model.User;
-import com.tensorldease.backend.repository.UserRepository;
+import com.tensorldease.backend.repository.ClientRepository;
+import com.tensorldease.backend.repository.KontrakRepository;
 import com.tensorldease.backend.repository.SessionTokenRepository;
+import com.tensorldease.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import java.util.List;
 
 @Service
 public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private ClientRepository clientRepository;
+
+    @Autowired
+    private KontrakRepository kontrakRepository;
 
     @Autowired
     private SessionTokenRepository sessionTokenRepository;
@@ -58,11 +67,28 @@ public class UserService {
         );
     }
 
-    // FR-04: Hapus Akun
+    // FR-04: Hapus Akun (soft delete)
     public void deleteAkun(String userId) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User tidak ditemukan!"));
-        userRepository.delete(user);
+
+        // Cek apakah client punya kontrak ACTIVE atau PENDING
+        clientRepository.findByUserUserId(userId).ifPresent(client -> {
+            boolean adaKontrakBerjalan = kontrakRepository
+                .existsByClientClientIdAndStatusIn(
+                    client.getClientId(),
+                    List.of("ACTIVE", "PENDING")
+                );
+            if (adaKontrakBerjalan) {
+                throw new RuntimeException(
+                    "Akun tidak dapat dihapus karena masih memiliki kontrak aktif!"
+                );
+            }
+        });
+
+        // Soft delete: nonaktifkan akun, bukan hapus dari DB
+        user.setIsActive(false);
+        userRepository.save(user);
     }
 
     // FR-06: Logout

@@ -1,5 +1,6 @@
 package com.tensorldease.backend.controller;
 
+import com.tensorldease.backend.dto.request.KontrakClientRequest;
 import com.tensorldease.backend.dto.request.KontrakRequest;
 import com.tensorldease.backend.dto.response.KontrakResponse;
 import com.tensorldease.backend.service.KontrakService;
@@ -16,11 +17,22 @@ public class KontrakController {
     @Autowired
     private KontrakService kontrakService;
 
-    // FR-10: Buat kontrak (Admin)
+    // FR-10: Buat kontrak oleh Admin
     @PostMapping("/admin/kontrak")
     public ResponseEntity<?> buatKontrak(@RequestBody KontrakRequest request) {
         try {
             KontrakResponse response = kontrakService.buatKontrak(request);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // Buat kontrak oleh Client sendiri
+    @PostMapping("/client/kontrak")
+    public ResponseEntity<?> buatKontrakByClient(@RequestBody KontrakClientRequest request) {
+        try {
+            KontrakResponse response = kontrakService.buatKontrakByClient(request);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -33,7 +45,7 @@ public class KontrakController {
         return ResponseEntity.ok(kontrakService.getAllKontrak());
     }
 
-    // FR-11: Filter kontrak by status (Admin)
+    // FR-11: Filter by status (Admin)
     @GetMapping("/admin/kontrak/status/{status}")
     public ResponseEntity<List<KontrakResponse>> getKontrakByStatus(
             @PathVariable String status) {

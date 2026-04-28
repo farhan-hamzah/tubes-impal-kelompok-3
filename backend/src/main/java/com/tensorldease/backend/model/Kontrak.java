@@ -19,7 +19,7 @@ public class Kontrak {
     private Client client;
 
     @ManyToOne
-    @JoinColumn(name = "admin_id", nullable = false)
+    @JoinColumn(name = "admin_id", nullable = true) // ubah jadi nullable
     private Admin admin;
 
     @ManyToOne

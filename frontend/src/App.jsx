@@ -13,6 +13,7 @@ import InvoiceAdmin from './pages/admin/InvoiceAdmin';
 import Katalog from './pages/client/Katalog';
 import KontrakClient from './pages/client/KontrakClient';
 import RiwayatTransaksi from './pages/client/RiwayatTransaksi';
+import ForgotPassword from './pages/auth/ForgotPassword';
 
 const ProtectedRoute = ({ children, role }) => {
   const { user, token, loading } = useAuth();
@@ -28,6 +29,7 @@ function AppRoutes() {
       <Route path="/" element={<Navigate to="/login" />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
       {/* Admin */}

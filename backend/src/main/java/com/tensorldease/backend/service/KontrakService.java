@@ -1,5 +1,6 @@
 package com.tensorldease.backend.service;
 
+import com.tensorldease.backend.dto.request.KontrakClientRequest;
 import com.tensorldease.backend.dto.request.KontrakRequest;
 import com.tensorldease.backend.dto.response.KontrakResponse;
 import com.tensorldease.backend.model.*;
@@ -26,7 +27,7 @@ public class KontrakService {
     @Autowired
     private PaketHpcRepository paketHpcRepository;
 
-    // FR-10: Buat Kontrak Retainer
+    // FR-10: Buat Kontrak oleh Admin
     public KontrakResponse buatKontrak(KontrakRequest request) {
         Client client = clientRepository.findById(request.getClientId())
             .orElseThrow(() -> new RuntimeException("Client tidak ditemukan!"));
@@ -37,36 +38,61 @@ public class KontrakService {
         PaketHpc paket = paketHpcRepository.findById(request.getPaketId())
             .orElseThrow(() -> new RuntimeException("Paket tidak ditemukan!"));
 
-        // Hitung tanggal berakhir dan total biaya
-        LocalDate tanggalBerakhir = request.getTanggalMulai()
-            .plusMonths(request.getDurasibulan());
-        Double totalBiaya = paket.getTarif() * request.getDurasibulan();
+        return simpanKontrak(client, admin, paket,
+            request.getTanggalMulai(),
+            request.getDurasibulan(),
+            request.getCatatan());
+    }
 
-        // Generate nomor kontrak
-        String nomorKontrak = "KTR-" + LocalDate.now().getYear() + 
-            "-" + String.format("%03d", kontrakRepository.count() + 1);
+    // Buat Kontrak oleh Client sendiri (tanpa admin)
+    public KontrakResponse buatKontrakByClient(KontrakClientRequest request) {
+        Client client = clientRepository.findById(request.getClientId())
+            .orElseThrow(() -> new RuntimeException("Client tidak ditemukan!"));
+
+        PaketHpc paket = paketHpcRepository.findById(request.getPaketId())
+            .orElseThrow(() -> new RuntimeException("Paket tidak ditemukan!"));
+
+        if (!paket.getStatus().equals("AKTIF")) {
+            throw new RuntimeException("Paket tidak tersedia!");
+        }
+
+        if (paket.getJumlahUnit() <= 0) {
+            throw new RuntimeException("Unit paket sudah habis!");
+        }
+
+        return simpanKontrak(client, null, paket,
+            request.getTanggalMulai(),
+            request.getDurasibulan(),
+            request.getCatatan());
+    }
+
+    // Method internal untuk simpan kontrak (reusable)
+    private KontrakResponse simpanKontrak(
+            Client client, Admin admin, PaketHpc paket,
+            LocalDate tanggalMulai, Integer durasibulan, String catatan) {
+
+        LocalDate tanggalBerakhir = tanggalMulai.plusMonths(durasibulan);
+        Double totalBiaya = paket.getTarif() * durasibulan;
+
+        String nomorKontrak = "KTR-" + LocalDate.now().getYear()
+            + "-" + String.format("%03d", kontrakRepository.count() + 1);
 
         Kontrak kontrak = new Kontrak();
         kontrak.setKontrakId(UUID.randomUUID().toString());
         kontrak.setClient(client);
-        kontrak.setAdmin(admin);
+        kontrak.setAdmin(admin); // null jika dibuat oleh client
         kontrak.setPaketHpc(paket);
         kontrak.setNomorKontrak(nomorKontrak);
-        kontrak.setTanggalMulai(request.getTanggalMulai());
+        kontrak.setTanggalMulai(tanggalMulai);
         kontrak.setTanggalBerakhir(tanggalBerakhir);
-        kontrak.setDurasibulan(request.getDurasibulan());
+        kontrak.setDurasibulan(durasibulan);
         kontrak.setTotalBiaya(totalBiaya);
-        kontrak.setCatatan(request.getCatatan());
-
-        // Set status berdasarkan tanggal mulai
-        if (request.getTanggalMulai().isAfter(LocalDate.now())) {
-            kontrak.setStatus("PENDING");
-        } else {
-            kontrak.setStatus("ACTIVE");
-        }
+        kontrak.setCatatan(catatan);
+        kontrak.setStatus(
+            tanggalMulai.isAfter(LocalDate.now()) ? "PENDING" : "ACTIVE"
+        );
 
         kontrakRepository.save(kontrak);
-
         return mapToResponse(kontrak);
     }
 
@@ -78,7 +104,7 @@ public class KontrakService {
             .collect(Collectors.toList());
     }
 
-    // FR-11: Lihat kontrak by status (Admin)
+    // FR-11: Filter by status (Admin)
     public List<KontrakResponse> getKontrakByStatus(String status) {
         return kontrakRepository.findByStatus(status)
             .stream()
@@ -86,7 +112,7 @@ public class KontrakService {
             .collect(Collectors.toList());
     }
 
-    // FR-11: Lihat kontrak milik client
+    // FR-11: Kontrak milik client
     public List<KontrakResponse> getKontrakByClient(String clientId) {
         return kontrakRepository.findByClientClientId(clientId)
             .stream()

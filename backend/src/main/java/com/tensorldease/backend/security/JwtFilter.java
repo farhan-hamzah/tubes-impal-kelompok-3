@@ -13,9 +13,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
-
+import com.tensorldease.backend.repository.SessionTokenRepository;
 @Component
 public class JwtFilter extends OncePerRequestFilter {
+    @Autowired
+    private SessionTokenRepository sessionTokenRepository;
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -33,7 +35,8 @@ public class JwtFilter extends OncePerRequestFilter {
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
-            if (jwtUtil.validateToken(token)) {
+            boolean tokenAktif = sessionTokenRepository.findByToken(token).isPresent();
+            if (jwtUtil.validateToken(token) && tokenAktif) {
                 String email = jwtUtil.getEmailFromToken(token);
                 userRepository.findByEmail(email).ifPresent(user -> {
                     var auth = new UsernamePasswordAuthenticationToken(

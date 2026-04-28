@@ -38,7 +38,7 @@ public class InvoiceService {
 
         // Generate nomor invoice
         String nomorInvoice = "INV-" + java.time.LocalDate.now().getYear()
-            + "-" + String.format("%03d", invoiceRepository.count() + 1);
+            + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
         Invoice invoice = new Invoice();
         invoice.setInvoiceId(UUID.randomUUID().toString());

@@ -20,8 +20,8 @@ export default function Login() {
     setError('');
     try {
       const res = await login(form);
-      const { token, role, nama, email } = res.data;
-      loginUser({ nama, email, role }, token);
+      const { token, role, nama, email, clientId } = res.data;
+      loginUser({ nama, email, role, clientId }, token);
 
       if (role === 'ADMIN') {
         navigate('/admin/dashboard');
@@ -51,7 +51,7 @@ export default function Login() {
         </p>
 
         <ul className="space-y-4 text-sm">
-          <li>⚡ GPU NVIDIA A100 & H100 tersedia</li>
+          <li>🚀 GPU NVIDIA A100 & H100 tersedia</li>
           <li>🔒 Infrastruktur aman dan terisolasi</li>
           <li>📊 Dashboard monitoring real-time</li>
           <li>💳 Sistem pembayaran retainer fleksibel</li>
@@ -101,18 +101,18 @@ export default function Login() {
             </div>
 
             <div className="flex items-center justify-between mb-6">
-            <div>
-              <input type="checkbox" className="mr-2" />
-              <span className="text-sm text-gray-400">Ingatkan saya</span>
-            </div>
+              <div>
+                <input type="checkbox" className="mr-2" />
+                <span className="text-sm text-gray-400">Ingatkan saya</span>
+              </div>
 
-            <a
-              href="/forgot-password"
-              className="text-sm text-blue-500 hover:underline"
-            >
-              Lupa password?
-            </a>
-          </div>
+              <a
+                href="/forgot-password"
+                className="text-sm text-blue-500 hover:underline"
+              >
+                Lupa password?
+              </a>
+            </div>
 
             <button
               type="submit"
@@ -132,9 +132,5 @@ export default function Login() {
         </div>
       </div>
     </div>
-    
   );
-  <p className="text-right text-sm text-blue-500 cursor-pointer hover:underline mb-4">
-  <a href="/forgot-password">Lupa password?</a>
-</p>
 }
