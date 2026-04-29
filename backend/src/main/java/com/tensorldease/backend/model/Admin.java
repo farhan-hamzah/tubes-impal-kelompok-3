@@ -2,7 +2,8 @@ package com.tensorldease.backend.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
-
+import com.tensorldease.backend.model.Admin;
+import com.tensorldease.backend.repository.AdminRepository;
 @Entity
 @Table(name = "admins")
 @Data

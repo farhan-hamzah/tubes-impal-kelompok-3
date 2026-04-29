@@ -21,12 +21,24 @@ public class InvoiceScheduler {
     @Autowired
     private InvoiceRepository invoiceRepository;
 
-    // Jalan setiap tanggal 1, jam 00:05
+    // Aktifkan kontrak PENDING yang tanggal mulainya sudah lewat — jalan setiap hari jam 00:01
+    @Scheduled(cron = "0 1 0 * * *")
+    public void aktivasiKontrak() {
+        List<Kontrak> kontrakPending = kontrakRepository.findByStatus("PENDING");
+        for (Kontrak kontrak : kontrakPending) {
+            if (!kontrak.getTanggalMulai().isAfter(LocalDate.now())) {
+                kontrak.setStatus("ACTIVE");
+                kontrakRepository.save(kontrak);
+            }
+        }
+    }
+
+    // Generate invoice bulanan — jalan setiap tanggal 1, jam 00:05
     @Scheduled(cron = "0 5 0 1 * *")
     public void generateInvoiceBulanan() {
         LocalDate sekarang = LocalDate.now();
         LocalDate periodeAwal = sekarang.withDayOfMonth(1);
-        LocalDate periodeAkhir  = sekarang.withDayOfMonth(sekarang.lengthOfMonth());
+        LocalDate periodeAkhir = sekarang.withDayOfMonth(sekarang.lengthOfMonth());
 
         List<Kontrak> kontrakAktif = kontrakRepository.findByStatus("ACTIVE");
 
@@ -50,7 +62,7 @@ public class InvoiceScheduler {
             invoice.setTagihanMulai(periodeAwal);
             invoice.setTagihanAkhir(periodeAkhir);
             invoice.setJumlahTagihan(kontrak.getPaketHpc().getTarif());
-            invoice.setTanggalJatuhTempo(periodeAwal.plusDays(14)); // jatuh tempo H+14
+            invoice.setTanggalJatuhTempo(periodeAwal.plusDays(14));
             invoice.setStatusPembayaran("UNPAID");
 
             invoiceRepository.save(invoice);

@@ -32,11 +32,11 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/payment/notification").permitAll() // ← pindah ke sini!
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/client/**").hasRole("CLIENT")
                 .requestMatchers("/api/paket/**").authenticated()
                 .requestMatchers("/api/kontrak/**").authenticated()
-                .requestMatchers("/api/payment/notification").permitAll() // webhook Midtrans
                 .requestMatchers("/api/payment/**").authenticated()
                 .anyRequest().authenticated()
             )

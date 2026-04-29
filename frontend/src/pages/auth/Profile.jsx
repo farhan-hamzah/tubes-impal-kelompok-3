@@ -27,7 +27,7 @@ export default function Profile() {
     setError('');
     setSuccess('');
     try {
-      await updateProfil(user.userId, form);
+      await updateProfil(user.clientId || user.adminId, form);
       setSuccess('Profil berhasil diperbarui!');
     } catch (err) {
       setError(err.response?.data || 'Gagal update profil!');
@@ -38,7 +38,7 @@ export default function Profile() {
 
   const handleHapus = async () => {
     try {
-      await deleteAkun(user.userId);
+      await deleteAkun(user.clientId || user.adminId);
       logoutUser();
       navigate('/login');
     } catch (err) {

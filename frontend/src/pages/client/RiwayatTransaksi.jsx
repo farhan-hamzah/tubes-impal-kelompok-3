@@ -14,7 +14,7 @@ export default function RiwayatTransaksi() {
     const script = document.createElement('script');
     script.src = 'https://app.sandbox.midtrans.com/snap/snap.js';
     // Ganti ke https://app.midtrans.com/snap/snap.js untuk production
-    script.setAttribute('data-client-key', 'SB-Mid-client-XXXXXXXXXXXX');
+    script.setAttribute('data-client-key', 'Mid-client-zSHCK3L1qCzGcCor');
     document.body.appendChild(script);
     return () => document.body.removeChild(script);
   }, []);

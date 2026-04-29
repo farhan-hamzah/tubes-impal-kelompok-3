@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { getAllKontrak, buatKontrak, getKontrakByStatus } from '../../api/kontrak';
 import { getAllClients } from '../../api/admin';
 import { getAllPaket } from '../../api/paket';
+import { useAuth } from '../../context/AuthContext'; // ← TAMBAH INI
 
 export default function KontrakAdmin() {
+  const { user } = useAuth(); // ← TAMBAH INI
   const [kontraks, setKontraks] = useState([]);
   const [clients, setClients] = useState([]);
   const [pakets, setPakets] = useState([]);
@@ -12,9 +14,12 @@ export default function KontrakAdmin() {
   const [filterStatus, setFilterStatus] = useState('');
   const [error, setError] = useState('');
   const [form, setForm] = useState({
-    clientId: '', adminId: '',
-    paketId: '', tanggalMulai: '',
-    durasibulan: '', catatan: ''
+    clientId: '',
+    adminId: '',
+    paketId: '',
+    tanggalMulai: '',
+    durasibulan: '',
+    catatan: ''
   });
 
   useEffect(() => {
@@ -57,7 +62,8 @@ export default function KontrakAdmin() {
     e.preventDefault();
     setError('');
     try {
-      await buatKontrak(form);
+      // Pastikan adminId terisi dari user context sebelum submit
+      await buatKontrak({ ...form, adminId: user.adminId }); // ← FIX: inject adminId di sini
       setShowForm(false);
       fetchAll();
     } catch (err) {
@@ -156,7 +162,6 @@ export default function KontrakAdmin() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Client</label>
                 <select
-                  name="clientId"
                   value={form.clientId}
                   onChange={(e) => setForm({...form, clientId: e.target.value})}
                   className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -172,7 +177,6 @@ export default function KontrakAdmin() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Paket HPC</label>
                 <select
-                  name="paketId"
                   value={form.paketId}
                   onChange={(e) => setForm({...form, paketId: e.target.value})}
                   className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"

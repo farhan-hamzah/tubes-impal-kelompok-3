@@ -11,9 +11,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import com.tensorldease.backend.repository.AdminRepository;
+import com.tensorldease.backend.model.Admin;
 
 @Service
 public class UserService {
+    @Autowired
+    private AdminRepository adminRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -30,10 +34,17 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    // FR-03: Update Profil
-    public UserResponse updateProfil(String userId, UpdateProfilRequest request) {
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User tidak ditemukan!"));
+       // FR-03: Update Profil
+    public UserResponse updateProfil(String id, UpdateProfilRequest request) {
+        // Coba cari by userId dulu, kalau tidak ketemu cari by clientId atau adminId
+        User user = userRepository.findById(id)
+            .orElseGet(() -> clientRepository.findById(id)
+                .map(client -> client.getUser())
+                .orElseGet(() -> adminRepository.findById(id)
+                    .map(admin -> admin.getUser())
+                    .orElseThrow(() -> new RuntimeException("User tidak ditemukan!"))
+                )
+            );
 
         if (request.getNama() != null && !request.getNama().isEmpty()) {
             user.setNama(request.getNama());
@@ -43,7 +54,6 @@ public class UserService {
             user.setNomorTelepon(request.getNomorTelepon());
         }
 
-        // Ganti password kalau ada
         if (request.getPasswordBaru() != null && !request.getPasswordBaru().isEmpty()) {
             if (request.getPasswordLama() == null ||
                 !passwordEncoder.matches(request.getPasswordLama(), user.getPassword())) {
@@ -67,13 +77,20 @@ public class UserService {
         );
     }
 
-    // FR-04: Hapus Akun (soft delete)
-    public void deleteAkun(String userId) {
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User tidak ditemukan!"));
+        // FR-04: Hapus Akun (soft delete)
+    public void deleteAkun(String id) {
+        // Coba cari by userId dulu, kalau tidak ketemu cari by clientId atau adminId
+        User user = userRepository.findById(id)
+            .orElseGet(() -> clientRepository.findById(id)
+                .map(client -> client.getUser())
+                .orElseGet(() -> adminRepository.findById(id)
+                    .map(admin -> admin.getUser())
+                    .orElseThrow(() -> new RuntimeException("User tidak ditemukan!"))
+                )
+            );
 
-        // Cek apakah client punya kontrak ACTIVE atau PENDING
-        clientRepository.findByUserUserId(userId).ifPresent(client -> {
+        // Cek kontrak aktif jika client
+        clientRepository.findByUserUserId(user.getUserId()).ifPresent(client -> {
             boolean adaKontrakBerjalan = kontrakRepository
                 .existsByClientClientIdAndStatusIn(
                     client.getClientId(),
@@ -86,7 +103,6 @@ public class UserService {
             }
         });
 
-        // Soft delete: nonaktifkan akun, bukan hapus dari DB
         user.setIsActive(false);
         userRepository.save(user);
     }

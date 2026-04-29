@@ -80,7 +80,7 @@ public class KontrakService {
         Kontrak kontrak = new Kontrak();
         kontrak.setKontrakId(UUID.randomUUID().toString());
         kontrak.setClient(client);
-        kontrak.setAdmin(admin); // null jika dibuat oleh client
+        kontrak.setAdmin(admin);
         kontrak.setPaketHpc(paket);
         kontrak.setNomorKontrak(nomorKontrak);
         kontrak.setTanggalMulai(tanggalMulai);
@@ -93,6 +93,11 @@ public class KontrakService {
         );
 
         kontrakRepository.save(kontrak);
+
+        // Kurangi unit paket yang tersedia
+        paket.setJumlahUnit(paket.getJumlahUnit() - 1);
+        paketHpcRepository.save(paket);
+
         return mapToResponse(kontrak);
     }
 

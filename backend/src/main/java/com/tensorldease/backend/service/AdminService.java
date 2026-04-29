@@ -14,12 +14,11 @@ public class AdminService {
     @Autowired
     private ClientRepository clientRepository;
 
-    // FR-05: Lihat semua client
     public List<UserResponse> getAllClients() {
         return clientRepository.findAll()
             .stream()
             .map(client -> new UserResponse(
-                client.getUser().getUserId(),
+                client.getClientId(), // PERBAIKAN: kirim clientId bukan userId
                 client.getUser().getNama(),
                 client.getUser().getEmail(),
                 client.getUser().getNomorTelepon(),
@@ -29,13 +28,12 @@ public class AdminService {
             .collect(Collectors.toList());
     }
 
-    // FR-05: Detail client
     public UserResponse getClientDetail(String clientId) {
         Client client = clientRepository.findById(clientId)
             .orElseThrow(() -> new RuntimeException("Client tidak ditemukan!"));
 
         return new UserResponse(
-            client.getUser().getUserId(),
+            client.getClientId(), // PERBAIKAN: kirim clientId bukan userId
             client.getUser().getNama(),
             client.getUser().getEmail(),
             client.getUser().getNomorTelepon(),

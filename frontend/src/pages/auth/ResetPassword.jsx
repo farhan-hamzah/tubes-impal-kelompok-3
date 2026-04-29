@@ -10,9 +10,10 @@ export default function ResetPassword() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await API.post(`/auth/reset-password/${token}`, {
-        password,
-      });
+        await API.post('/auth/reset-password', {
+          token,
+          passwordBaru: password,
+        });
       setMessage('Password berhasil direset!');
     } catch (err) {
       setMessage('Token tidak valid / expired');

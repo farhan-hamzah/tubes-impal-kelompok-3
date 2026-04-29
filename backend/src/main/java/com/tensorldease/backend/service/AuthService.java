@@ -21,9 +21,14 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 import com.tensorldease.backend.model.SessionToken;
 import com.tensorldease.backend.repository.SessionTokenRepository;
+import com.tensorldease.backend.model.Admin;
+import com.tensorldease.backend.repository.AdminRepository;
 
 @Service
 public class AuthService {
+
+    @Autowired
+    private AdminRepository adminRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -147,17 +152,25 @@ public class AuthService {
             user.getEmail(),
             user.getUserRole().name()
         );
+
         SessionToken sessionToken = new SessionToken();
         sessionToken.setTokenId(UUID.randomUUID().toString());
         sessionToken.setUser(user);
         sessionToken.setToken(token);
-        sessionToken.setExpiredAt(LocalDateTime.now().plus(jwtExpiration, java.time.temporal.ChronoUnit.MILLIS)); // sama dengan JWT expiry
+        sessionToken.setExpiredAt(LocalDateTime.now().plus(jwtExpiration, java.time.temporal.ChronoUnit.MILLIS));
         sessionTokenRepository.save(sessionToken);
-        // Ambil clientId jika role CLIENT
+
         String clientId = null;
         if (user.getUserRole().name().equals("CLIENT")) {
             clientId = clientRepository.findByUserUserId(user.getUserId())
                 .map(Client::getClientId)
+                .orElse(null);
+        }
+
+        String adminId = null;
+        if (user.getUserRole().name().equals("ADMIN")) {
+            adminId = adminRepository.findByUserUserId(user.getUserId())
+                .map(Admin::getAdminId)
                 .orElse(null);
         }
 
@@ -166,7 +179,8 @@ public class AuthService {
             user.getUserRole().name(),
             user.getNama(),
             user.getEmail(),
-            clientId // tambah ini
+            clientId,
+            adminId
         );
     }
 }

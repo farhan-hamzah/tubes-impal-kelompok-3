@@ -20,8 +20,8 @@ export default function Login() {
     setError('');
     try {
       const res = await login(form);
-      const { token, role, nama, email, clientId } = res.data;
-      loginUser({ nama, email, role, clientId }, token);
+      const { token, role, nama, email, clientId, adminId } = res.data;
+      loginUser({ nama, email, role, clientId, adminId }, token);
 
       if (role === 'ADMIN') {
         navigate('/admin/dashboard');
