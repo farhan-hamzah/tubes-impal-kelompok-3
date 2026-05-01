@@ -75,7 +75,7 @@ public class KontrakService {
         Double totalBiaya = paket.getTarif() * durasibulan;
 
         String nomorKontrak = "KTR-" + LocalDate.now().getYear()
-            + "-" + String.format("%03d", kontrakRepository.count() + 1);
+            + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
         Kontrak kontrak = new Kontrak();
         kontrak.setKontrakId(UUID.randomUUID().toString());
