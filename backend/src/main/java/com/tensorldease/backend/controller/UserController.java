@@ -28,6 +28,15 @@ public class UserController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    // Tambah method ini di UserController
+    @GetMapping("/profile/{id}")
+    public ResponseEntity<?> getProfil(@PathVariable String id) {
+        try {
+            return ResponseEntity.ok(userService.getProfil(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 
     // FR-04: Hapus Akun
     @DeleteMapping("/delete/{userId}")

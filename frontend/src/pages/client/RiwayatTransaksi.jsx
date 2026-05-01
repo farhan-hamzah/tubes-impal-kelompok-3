@@ -1,19 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getInvoiceByClient } from '../../api/invoice';
 import { getSnapToken } from '../../api/payment';
+import { uploadBuktiPembayaran } from '../../api/invoice';
 import { useAuth } from '../../context/AuthContext';
 
 export default function RiwayatTransaksi() {
   const { user } = useAuth();
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [payingId, setPayingId] = useState(null); // track invoice yang sedang diproses
+  const [payingId, setPayingId] = useState(null);
+  const [uploadingId, setUploadingId] = useState(null); // track invoice yang sedang upload
+  const [previewBukti, setPreviewBukti] = useState(null); // untuk lihat bukti yang sudah diupload
+  const fileInputRef = useRef({});
 
   useEffect(() => {
-    // Load Midtrans Snap script sekali saat mount
     const script = document.createElement('script');
     script.src = 'https://app.sandbox.midtrans.com/snap/snap.js';
-    // Ganti ke https://app.midtrans.com/snap/snap.js untuk production
     script.setAttribute('data-client-key', 'Mid-client-zSHCK3L1qCzGcCor');
     document.body.appendChild(script);
     return () => document.body.removeChild(script);
@@ -39,27 +41,45 @@ export default function RiwayatTransaksi() {
     try {
       const res = await getSnapToken(invoiceId);
       const { snapToken } = res.data;
-
       window.snap.pay(snapToken, {
-        onSuccess: () => {
-          alert('Pembayaran berhasil!');
-          fetchInvoice(); // refresh list
-        },
-        onPending: () => {
-          alert('Pembayaran pending, menunggu konfirmasi.');
-          fetchInvoice();
-        },
-        onError: () => {
-          alert('Pembayaran gagal. Silakan coba lagi.');
-        },
-        onClose: () => {
-          console.log('Popup ditutup tanpa menyelesaikan pembayaran.');
-        },
+        onSuccess: () => { alert('Pembayaran berhasil!'); fetchInvoice(); },
+        onPending: () => { alert('Pembayaran pending.'); fetchInvoice(); },
+        onError: () => { alert('Pembayaran gagal. Coba lagi.'); },
+        onClose: () => { console.log('Popup ditutup.'); },
       });
     } catch (err) {
       alert('Gagal memulai pembayaran: ' + (err.response?.data || err.message));
     } finally {
       setPayingId(null);
+    }
+  };
+
+  const handleUploadBukti = async (invoiceId, file) => {
+    if (!file) return;
+
+    // Validasi ukuran file max 2MB
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Ukuran file maksimal 2MB!');
+      return;
+    }
+
+    setUploadingId(invoiceId);
+    try {
+      // Convert ke base64
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      await uploadBuktiPembayaran(invoiceId, base64);
+      alert('Bukti pembayaran berhasil diupload! Menunggu verifikasi admin.');
+      fetchInvoice();
+    } catch (err) {
+      alert('Gagal upload bukti: ' + (err.response?.data || err.message));
+    } finally {
+      setUploadingId(null);
     }
   };
 
@@ -89,7 +109,8 @@ export default function RiwayatTransaksi() {
                   {inv.statusPembayaran}
                 </span>
               </div>
-              <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
+
+              <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 mb-3">
                 <p>📋 Kontrak: {inv.nomorKontrak}</p>
                 <p>💰 Tagihan: Rp {inv.jumlahTagihan?.toLocaleString('id-ID')}</p>
                 <p>📅 Periode: {inv.tagihanMulai} s/d {inv.tagihanAkhir}</p>
@@ -99,20 +120,83 @@ export default function RiwayatTransaksi() {
                 )}
               </div>
 
-              {/* Tombol Bayar hanya muncul jika UNPAID */}
               {inv.statusPembayaran === 'UNPAID' && (
-                <div className="mt-3">
+                <div className="flex flex-col gap-2">
+                  {/* Tombol bayar via Midtrans */}
                   <button
                     onClick={() => handleBayar(inv.invoiceId)}
                     disabled={payingId === inv.invoiceId}
                     className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 disabled:opacity-50"
                   >
-                    {payingId === inv.invoiceId ? 'Memproses...' : '💳 Bayar Sekarang'}
+                    {payingId === inv.invoiceId ? 'Memproses...' : '💳 Bayar via Midtrans'}
                   </button>
+
+                  {/* Tombol upload bukti transfer manual */}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="file"
+                      accept="image/*,.pdf"
+                      ref={el => fileInputRef.current[inv.invoiceId] = el}
+                      onChange={(e) => handleUploadBukti(inv.invoiceId, e.target.files[0])}
+                      className="hidden"
+                    />
+                    <button
+                      onClick={() => fileInputRef.current[inv.invoiceId]?.click()}
+                      disabled={uploadingId === inv.invoiceId}
+                      className="bg-gray-100 border border-gray-300 text-gray-700 px-4 py-2 rounded text-sm hover:bg-gray-200 disabled:opacity-50"
+                    >
+                      {uploadingId === inv.invoiceId
+                        ? 'Mengupload...'
+                        : inv.buktiPembayaran
+                          ? '✅ Bukti Terupload — Ganti'
+                          : '📎 Upload Bukti Transfer'}
+                    </button>
+
+                    {/* Preview bukti yang sudah diupload */}
+                    {inv.buktiPembayaran && (
+                      <button
+                        onClick={() => setPreviewBukti(inv.buktiPembayaran)}
+                        className="text-blue-600 text-sm underline"
+                      >
+                        Lihat Bukti
+                      </button>
+                    )}
+                  </div>
+
+                  {inv.buktiPembayaran && (
+                    <p className="text-xs text-yellow-600">
+                      ⏳ Bukti sudah diupload, menunggu verifikasi admin.
+                    </p>
+                  )}
                 </div>
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Modal preview bukti */}
+      {previewBukti && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+          onClick={() => setPreviewBukti(null)}
+        >
+          <div className="max-w-lg w-full mx-4" onClick={e => e.stopPropagation()}>
+            <div className="bg-white rounded-lg overflow-hidden">
+              <div className="flex justify-between items-center p-3 border-b">
+                <span className="font-medium">Bukti Pembayaran</span>
+                <button onClick={() => setPreviewBukti(null)} className="text-gray-500 hover:text-gray-700">✕</button>
+              </div>
+              {previewBukti.startsWith('data:image') ? (
+                <img src={previewBukti} alt="Bukti Pembayaran" className="w-full" />
+              ) : (
+                <div className="p-4 text-center text-gray-500">
+                  <p>File PDF tidak bisa dipreview.</p>
+                  <a href={previewBukti} download className="text-blue-600 underline">Download</a>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

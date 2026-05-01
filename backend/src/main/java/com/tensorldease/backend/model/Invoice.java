@@ -43,6 +43,10 @@ public class Invoice {
     @Column(name = "status_pembayaran")
     private String statusPembayaran = "UNPAID";
 
+    // Field baru untuk bukti transfer manual
+    @Column(name = "bukti_pembayaran", columnDefinition = "TEXT")
+    private String buktiPembayaran;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

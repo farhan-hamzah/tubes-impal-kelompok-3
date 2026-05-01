@@ -17,4 +17,5 @@ public class InvoiceResponse {
     private LocalDate tanggalJatuhTempo;
     private LocalDate tanggalPembayaran;
     private String statusPembayaran;
+    private String buktiPembayaran; // tambah ini
 }

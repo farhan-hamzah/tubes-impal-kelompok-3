@@ -11,10 +11,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 @EnableWebSecurity
-public class SecurityConfig {
+public class SecurityConfig implements WebMvcConfigurer {
 
     @Autowired
     private JwtFilter jwtFilter;
@@ -22,6 +24,12 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    // Izinkan titik (.) di path variable
+    @Override
+    public void configurePathMatch(PathMatchConfigurer configurer) {
+        configurer.setUseRegisteredSuffixPatternMatch(false);
     }
 
     @Bean
@@ -32,7 +40,7 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/payment/notification").permitAll() // ← pindah ke sini!
+                .requestMatchers("/api/payment/notification").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/client/**").hasRole("CLIENT")
                 .requestMatchers("/api/paket/**").authenticated()

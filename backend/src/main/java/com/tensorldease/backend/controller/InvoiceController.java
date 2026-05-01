@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -17,45 +18,53 @@ public class InvoiceController {
     @Autowired
     private InvoiceService invoiceService;
 
-    // FR-13: Buat Invoice (Admin)
     @PostMapping("/admin/invoice")
     public ResponseEntity<?> buatInvoice(@RequestBody InvoiceRequest request) {
         try {
-            InvoiceResponse response = invoiceService.buatInvoice(request);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(invoiceService.buatInvoice(request));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
-    // FR-14: Laporan semua invoice (Admin)
     @GetMapping("/admin/invoice")
     public ResponseEntity<List<InvoiceResponse>> getAllInvoice() {
         return ResponseEntity.ok(invoiceService.getAllInvoice());
     }
 
-    // FR-14: Filter by status (Admin)
     @GetMapping("/admin/invoice/status/{status}")
-    public ResponseEntity<List<InvoiceResponse>> getInvoiceByStatus(
-            @PathVariable String status) {
+    public ResponseEntity<List<InvoiceResponse>> getInvoiceByStatus(@PathVariable String status) {
         return ResponseEntity.ok(invoiceService.getInvoiceByStatus(status));
     }
 
-    // FR-15: Riwayat transaksi client
     @GetMapping("/client/invoice/{clientId}")
-    public ResponseEntity<List<InvoiceResponse>> getInvoiceByClient(
-            @PathVariable String clientId) {
+    public ResponseEntity<List<InvoiceResponse>> getInvoiceByClient(@PathVariable String clientId) {
         return ResponseEntity.ok(invoiceService.getInvoiceByClient(clientId));
     }
 
-    // FR-16: Validasi Pembayaran (Admin)
+    // Endpoint upload bukti pembayaran transfer manual oleh client
+    @PostMapping("/client/invoice/upload-bukti/{invoiceId}")
+    public ResponseEntity<?> uploadBukti(
+            @PathVariable String invoiceId,
+            @RequestBody Map<String, String> body) {
+        try {
+            String bukti = body.get("buktiPembayaran");
+            if (bukti == null || bukti.isEmpty()) {
+                return ResponseEntity.badRequest().body("Bukti pembayaran tidak boleh kosong!");
+            }
+            return ResponseEntity.ok(invoiceService.uploadBuktiPembayaran(invoiceId, bukti));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // Validasi manual oleh Admin — hanya bisa jika client sudah upload bukti
     @PostMapping("/admin/invoice/validasi/{adminId}")
     public ResponseEntity<?> validasiPembayaran(
             @PathVariable String adminId,
             @RequestBody ValidasiPembayaranRequest request) {
         try {
-            InvoiceResponse response = invoiceService.validasiPembayaran(request, adminId);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(invoiceService.validasiPembayaran(request, adminId));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

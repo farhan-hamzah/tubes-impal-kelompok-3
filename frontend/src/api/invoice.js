@@ -5,3 +5,5 @@ export const getAllInvoice = () => API.get('/admin/invoice');
 export const getInvoiceByStatus = (status) => API.get(`/admin/invoice/status/${status}`);
 export const getInvoiceByClient = (clientId) => API.get(`/client/invoice/${clientId}`);
 export const validasiPembayaran = (adminId, data) => API.post(`/admin/invoice/validasi/${adminId}`, data);
+export const uploadBuktiPembayaran = (invoiceId, buktiBase64) =>
+    API.post(`/client/invoice/upload-bukti/${invoiceId}`, { buktiPembayaran: buktiBase64 });

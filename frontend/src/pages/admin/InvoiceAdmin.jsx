@@ -12,6 +12,7 @@ export default function InvoiceAdmin() {
   const [validasiId, setValidasiId] = useState(null);
   const [filterStatus, setFilterStatus] = useState('');
   const [error, setError] = useState('');
+  const [previewBukti, setPreviewBukti] = useState(null);
   const [form, setForm] = useState({
     kontrakId: '', tagihanMulai: '',
     tagihanAkhir: '', tanggalJatuhTempo: ''
@@ -90,6 +91,7 @@ export default function InvoiceAdmin() {
 
       {error && <div className="bg-red-100 text-red-600 p-3 rounded mb-4">{error}</div>}
 
+      {/* Filter Status */}
       <div className="flex gap-2 mb-4">
         {['', 'PAID', 'UNPAID', 'OVERDUE'].map((s) => (
           <button
@@ -111,20 +113,27 @@ export default function InvoiceAdmin() {
               <tr className="bg-gray-50">
                 <th className="border p-3 text-left">No. Invoice</th>
                 <th className="border p-3 text-left">Client</th>
+                <th className="border p-3 text-left">Kontrak</th>
                 <th className="border p-3 text-left">Periode</th>
                 <th className="border p-3 text-left">Jumlah</th>
                 <th className="border p-3 text-left">Jatuh Tempo</th>
                 <th className="border p-3 text-left">Status</th>
+                <th className="border p-3 text-left">Bukti</th>
                 <th className="border p-3 text-left">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {invoices.length === 0 ? (
-                <tr><td colSpan="7" className="border p-3 text-center text-gray-500">Belum ada invoice</td></tr>
+                <tr>
+                  <td colSpan="9" className="border p-3 text-center text-gray-500">
+                    Belum ada invoice
+                  </td>
+                </tr>
               ) : invoices.map((inv, i) => (
                 <tr key={i} className="hover:bg-gray-50">
                   <td className="border p-3 font-mono text-sm">{inv.nomorInvoice}</td>
                   <td className="border p-3">{inv.namaClient}</td>
+                  <td className="border p-3 font-mono text-sm">{inv.nomorKontrak}</td>
                   <td className="border p-3 text-sm">{inv.tagihanMulai} s/d {inv.tagihanAkhir}</td>
                   <td className="border p-3">Rp {inv.jumlahTagihan?.toLocaleString('id-ID')}</td>
                   <td className="border p-3">{inv.tanggalJatuhTempo}</td>
@@ -134,13 +143,31 @@ export default function InvoiceAdmin() {
                     </span>
                   </td>
                   <td className="border p-3">
-                    {inv.statusPembayaran === 'UNPAID' && (
+                    {inv.buktiPembayaran ? (
                       <button
-                        onClick={() => { setValidasiId(inv.invoiceId); setFormValidasi({...formValidasi, jumlahDibayar: inv.jumlahTagihan}); }}
+                        onClick={() => setPreviewBukti(inv.buktiPembayaran)}
+                        className="text-blue-600 text-sm underline"
+                      >
+                        Lihat Bukti
+                      </button>
+                    ) : (
+                      <span className="text-gray-400 text-sm">Belum ada</span>
+                    )}
+                  </td>
+                  <td className="border p-3">
+                    {inv.statusPembayaran === 'UNPAID' && inv.buktiPembayaran && (
+                      <button
+                        onClick={() => {
+                          setValidasiId(inv.invoiceId);
+                          setFormValidasi({...formValidasi, jumlahDibayar: inv.jumlahTagihan});
+                        }}
                         className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
                       >
                         Validasi
                       </button>
+                    )}
+                    {inv.statusPembayaran === 'UNPAID' && !inv.buktiPembayaran && (
+                      <span className="text-gray-400 text-xs">Menunggu bukti</span>
                     )}
                   </td>
                 </tr>
@@ -152,7 +179,7 @@ export default function InvoiceAdmin() {
 
       {/* Form Buat Invoice */}
       {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40">
           <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
             <h3 className="text-xl font-bold mb-4">Buat Invoice</h3>
             <form onSubmit={handleBuatInvoice} className="space-y-3">
@@ -201,11 +228,14 @@ export default function InvoiceAdmin() {
         </div>
       )}
 
-      {/* Form Validasi Pembayaran */}
+      {/* Form Validasi Pembayaran Manual */}
       {validasiId && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40">
           <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold mb-4">Validasi Pembayaran</h3>
+            <h3 className="text-xl font-bold mb-1">Validasi Pembayaran</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Pastikan bukti transfer sudah diverifikasi sebelum konfirmasi.
+            </p>
             <form onSubmit={handleValidasi} className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Jumlah Dibayar</label>
@@ -231,16 +261,6 @@ export default function InvoiceAdmin() {
                   <option value="QRIS">QRIS</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Bukti Pembayaran</label>
-                <input
-                  type="text"
-                  value={formValidasi.buktiPembayaran}
-                  onChange={(e) => setFormValidasi({...formValidasi, buktiPembayaran: e.target.value})}
-                  placeholder="Nama file bukti transfer"
-                  className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
               <div className="flex gap-3 pt-2">
                 <button type="submit" className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700">
                   Konfirmasi Lunas
@@ -250,6 +270,31 @@ export default function InvoiceAdmin() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Preview Bukti */}
+      {previewBukti && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+          onClick={() => setPreviewBukti(null)}
+        >
+          <div className="max-w-lg w-full mx-4" onClick={e => e.stopPropagation()}>
+            <div className="bg-white rounded-lg overflow-hidden">
+              <div className="flex justify-between items-center p-3 border-b">
+                <span className="font-medium">Bukti Pembayaran</span>
+                <button onClick={() => setPreviewBukti(null)} className="text-gray-500 hover:text-gray-700">✕</button>
+              </div>
+              {previewBukti.startsWith('data:image') ? (
+                <img src={previewBukti} alt="Bukti Pembayaran" className="w-full" />
+              ) : (
+                <div className="p-4 text-center">
+                  <p className="text-gray-500 mb-2">File PDF tidak bisa dipreview.</p>
+                  <a href={previewBukti} download className="text-blue-600 underline">Download</a>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

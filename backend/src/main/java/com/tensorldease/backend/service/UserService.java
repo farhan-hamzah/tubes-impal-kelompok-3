@@ -34,6 +34,26 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+
+    public UserResponse getProfil(String id) {
+        User user = userRepository.findById(id)
+            .orElseGet(() -> clientRepository.findById(id)
+                .map(client -> client.getUser())
+                .orElseGet(() -> adminRepository.findById(id)
+                    .map(admin -> admin.getUser())
+                    .orElseThrow(() -> new RuntimeException("User tidak ditemukan!"))
+                )
+            );
+
+        return new UserResponse(
+            user.getUserId(),
+            user.getNama(),
+            user.getEmail(),
+            user.getNomorTelepon(),
+            user.getUserRole().name(),
+            user.getIsActive()
+        );
+    }
        // FR-03: Update Profil
     public UserResponse updateProfil(String id, UpdateProfilRequest request) {
         // Coba cari by userId dulu, kalau tidak ketemu cari by clientId atau adminId

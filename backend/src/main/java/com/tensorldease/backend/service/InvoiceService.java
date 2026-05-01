@@ -36,7 +36,6 @@ public class InvoiceService {
             throw new RuntimeException("Kontrak tidak aktif!");
         }
 
-        // Generate nomor invoice
         String nomorInvoice = "INV-" + java.time.LocalDate.now().getYear()
             + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
@@ -51,6 +50,20 @@ public class InvoiceService {
         invoice.setTanggalJatuhTempo(request.getTanggalJatuhTempo());
         invoice.setStatusPembayaran("UNPAID");
 
+        invoiceRepository.save(invoice);
+        return mapToResponse(invoice);
+    }
+
+    // Upload bukti pembayaran transfer manual oleh client
+    public InvoiceResponse uploadBuktiPembayaran(String invoiceId, String buktiBase64) {
+        Invoice invoice = invoiceRepository.findById(invoiceId)
+            .orElseThrow(() -> new RuntimeException("Invoice tidak ditemukan!"));
+
+        if (invoice.getStatusPembayaran().equals("PAID")) {
+            throw new RuntimeException("Invoice sudah dibayar!");
+        }
+
+        invoice.setBuktiPembayaran(buktiBase64);
         invoiceRepository.save(invoice);
         return mapToResponse(invoice);
     }
@@ -79,7 +92,8 @@ public class InvoiceService {
             .collect(Collectors.toList());
     }
 
-    // FR-16: Validasi Pembayaran
+    // FR-16: Validasi Pembayaran manual oleh Admin
+    // Hanya bisa jika client sudah upload bukti
     public InvoiceResponse validasiPembayaran(
             ValidasiPembayaranRequest request,
             String adminId) {
@@ -91,10 +105,14 @@ public class InvoiceService {
             throw new RuntimeException("Invoice sudah dibayar!");
         }
 
+        // Validasi: client harus upload bukti dulu
+        if (invoice.getBuktiPembayaran() == null || invoice.getBuktiPembayaran().isEmpty()) {
+            throw new RuntimeException("Client belum upload bukti pembayaran!");
+        }
+
         Admin admin = adminRepository.findById(adminId)
             .orElseThrow(() -> new RuntimeException("Admin tidak ditemukan!"));
 
-        // Buat record pembayaran
         Pembayaran pembayaran = new Pembayaran();
         pembayaran.setPembayaranId(UUID.randomUUID().toString());
         pembayaran.setInvoice(invoice);
@@ -105,7 +123,6 @@ public class InvoiceService {
         pembayaran.setWaktuValidasi(LocalDateTime.now());
         pembayaranRepository.save(pembayaran);
 
-        // Update status invoice
         invoice.setStatusPembayaran("PAID");
         invoice.setTanggalPembayaran(java.time.LocalDate.now());
         invoiceRepository.save(invoice);
@@ -124,7 +141,8 @@ public class InvoiceService {
             invoice.getJumlahTagihan(),
             invoice.getTanggalJatuhTempo(),
             invoice.getTanggalPembayaran(),
-            invoice.getStatusPembayaran()
+            invoice.getStatusPembayaran(),
+            invoice.getBuktiPembayaran() // tambah ini
         );
     }
 }
