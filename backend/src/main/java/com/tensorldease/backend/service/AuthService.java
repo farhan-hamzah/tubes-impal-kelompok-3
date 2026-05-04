@@ -23,7 +23,7 @@ import com.tensorldease.backend.model.SessionToken;
 import com.tensorldease.backend.repository.SessionTokenRepository;
 import com.tensorldease.backend.model.Admin;
 import com.tensorldease.backend.repository.AdminRepository;
-
+import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AuthService {
 
