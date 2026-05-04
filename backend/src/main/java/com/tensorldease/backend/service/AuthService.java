@@ -55,6 +55,7 @@ public class AuthService {
     private long jwtExpiration;
     
     // Lupa Password - Request Reset
+    @Transactional
     public void forgotPassword(ForgotPasswordRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
             .orElseThrow(() -> new RuntimeException("Email tidak terdaftar!"));
