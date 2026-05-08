@@ -15,7 +15,7 @@ public class PaketHpcController {
     private PaketHpcService paketHpcService;
 
     // FR-07: Lihat Katalog (Client & Admin)
-    @GetMapping({"/api/paket", "/api/paket/all"})
+    @GetMapping("/api/paket")
     public ResponseEntity<List<PaketHpc>> getAllPaket() {
         return ResponseEntity.ok(paketHpcService.getAllPaket());
     }
