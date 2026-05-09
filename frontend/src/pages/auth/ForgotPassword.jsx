@@ -1,152 +1,92 @@
 import { useState } from 'react';
-import API from '../../api/axios';
+import { Link } from 'react-router-dom';
+import { authService } from '../../services/AuthService';
 
 export default function ForgotPassword() {
-  const [email, setEmail] = useState('');
-  const [token, setToken] = useState('');
-  const [passwordBaru, setPasswordBaru] = useState('');
-  const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+    const [email, setEmail] = useState('');
+    const [sent, setSent] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
-  const handleRequestReset = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    try {
-      await API.post('/auth/forgot-password', { email });
-      setSuccess('Email reset password telah dikirim! Cek inbox kamu.');
-      setStep(2);
-    } catch (err) {
-      setError(err.response?.data || 'Gagal kirim email!');
-    } finally {
-      setLoading(false);
-    }
-  };
+    const handleSubmit = async e => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+        try {
+            await authService.forgotPassword(email);
+            setSent(true);
+        } catch (err) {
+            setError(err.message || 'Gagal mengirim email. Coba lagi.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  const handleResetPassword = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    try {
-      await API.post('/auth/reset-password', { token, passwordBaru });
-      setSuccess('Password berhasil direset! Silakan login.');
-      setStep(3);
-    } catch (err) {
-      setError(err.response?.data || 'Gagal reset password!');
-    } finally {
-      setLoading(false);
-    }
-  };
+    return (
+        <div className="min-h-screen grid-bg flex items-center justify-center p-4" style={{ background: '#0b1326' }}>
+            <div className="w-full max-w-sm fade-in">
+                <div className="flex items-center justify-center gap-3 mb-8">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                        style={{ background: 'linear-gradient(135deg,#4cd6ff,#007c98)' }}>
+                        <span className="material-symbols-outlined icon-fill text-2xl" style={{ color: '#003543' }}>memory</span>
+                    </div>
+                    <span className="font-display font-black text-2xl tracking-widest" style={{ color: '#4cd6ff' }}>TensorLease</span>
+                </div>
 
-  return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-blue-600">TensorLease</h1>
-          <p className="text-gray-500 mt-2">
-            {step === 1 && 'Lupa Password'}
-            {step === 2 && 'Masukkan Token Reset'}
-            {step === 3 && 'Password Berhasil Direset!'}
-          </p>
+                <div className="card p-8" style={{ background: '#171f33' }}>
+                    {!sent ? (
+                        <>
+                            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-6"
+                                style={{ background: 'rgba(76,214,255,0.1)', border: '1px solid rgba(76,214,255,0.2)' }}>
+                                <span className="material-symbols-outlined text-3xl" style={{ color: '#4cd6ff' }}>lock_reset</span>
+                            </div>
+                            <h2 className="font-display font-bold text-2xl text-center mb-2" style={{ color: '#dae2fd' }}>Reset Password</h2>
+                            <p className="text-sm text-center mb-8" style={{ color: '#8c90a1' }}>
+                                Masukkan email Anda dan kami akan mengirimkan link untuk reset password.
+                            </p>
+                            {error && (
+                                <div className="mb-4 p-3 rounded-xl flex items-start gap-3 fade-in"
+                                    style={{ background: 'rgba(147,0,10,0.2)', borderLeft: '3px solid #ffb4ab' }}>
+                                    <span className="material-symbols-outlined text-lg shrink-0"
+                                        style={{ color: '#ffb4ab' }}>report</span>
+                                    <p className="text-sm" style={{ color: '#ffb4ab' }}>{error}</p>
+                                </div>
+                            )}
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold uppercase tracking-wider" style={{ color: '#8c90a1' }}>Alamat Email</label>
+                                    <div className="relative">
+                                        <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px]" style={{ color: '#4a4f62' }}>mail</span>
+                                        <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
+                                            placeholder="nama@perusahaan.com" className="input input-icon" />
+                                    </div>
+                                </div>
+                                <button type="submit" disabled={loading} className="btn-primary w-full">
+                                    {loading
+                                        ? <><span className="material-symbols-outlined spin">progress_activity</span> Mengirim...</>
+                                        : <><span className="material-symbols-outlined">send</span> Kirim Link Reset</>}
+                                </button>
+                            </form>
+                        </>
+                    ) : (
+                        <div className="text-center py-4 fade-in">
+                            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6"
+                                style={{ background: 'rgba(76,214,255,0.1)', border: '1px solid rgba(76,214,255,0.3)' }}>
+                                <span className="material-symbols-outlined text-3xl" style={{ color: '#4cd6ff' }}>mark_email_read</span>
+                            </div>
+                            <h2 className="font-display font-bold text-xl mb-2" style={{ color: '#dae2fd' }}>Email Terkirim!</h2>
+                            <p className="text-sm mb-6" style={{ color: '#8c90a1' }}>
+                                Link reset password telah dikirim ke <strong style={{ color: '#4cd6ff' }}>{email}</strong>.
+                            </p>
+                        </div>
+                    )}
+                    <Link to="/login" className="flex items-center justify-center gap-2 text-sm mt-4 hover:underline"
+                        style={{ color: '#4cd6ff' }}>
+                        <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                        Kembali ke Login
+                    </Link>
+                </div>
+            </div>
         </div>
-
-        {error && (
-          <div className="bg-red-100 text-red-600 p-3 rounded mb-4 text-sm">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="bg-green-100 text-green-600 p-3 rounded mb-4 text-sm">
-            {success}
-          </div>
-        )}
-
-        {/* Step 1 - Input Email */}
-        {step === 1 && (
-          <form onSubmit={handleRequestReset}>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="email@example.com"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-            >
-              {loading ? 'Mengirim...' : 'Kirim Email Reset'}
-            </button>
-          </form>
-        )}
-
-        {/* Step 2 - Input Token + Password Baru */}
-        {step === 2 && (
-          <form onSubmit={handleResetPassword}>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Token (dari email)
-              </label>
-              <input
-                type="text"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Paste token dari email"
-                required
-              />
-            </div>
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Password Baru
-              </label>
-              <input
-                type="password"
-                value={passwordBaru}
-                onChange={(e) => setPasswordBaru(e.target.value)}
-                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Minimal 8 karakter"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-            >
-              {loading ? 'Mereset...' : 'Reset Password'}
-            </button>
-          </form>
-        )}
-
-        {/* Step 3 - Sukses */}
-        {step === 3 && (
-          <a
-            href="/login"
-            className="block w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition text-center"
-          >
-            Login Sekarang
-          </a>
-        )}
-
-        {step !== 3 && (
-          <p className="text-center text-sm text-gray-500 mt-4">
-            Ingat password?{' '}
-            <a href="/login" className="text-blue-600 hover:underline">
-              Login di sini
-            </a>
-          </p>
-        )}
-      </div>
-    </div>
-  );
+    );
 }

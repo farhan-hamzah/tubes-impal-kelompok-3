@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import API from '../../api/axios';
+import { authService } from '../../services/AuthService';
 
 export default function ResetPassword() {
   const { token } = useParams();
@@ -10,13 +10,10 @@ export default function ResetPassword() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-        await API.post('/auth/reset-password', {
-          token,
-          passwordBaru: password,
-        });
+        await authService.resetPassword({ token, passwordBaru: password });
       setMessage('Password berhasil direset!');
     } catch (err) {
-      setMessage('Token tidak valid / expired');
+      setMessage(err.message || 'Token tidak valid / expired');
     }
   };
 

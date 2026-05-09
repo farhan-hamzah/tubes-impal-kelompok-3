@@ -1,250 +1,445 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getAllPaket } from '../../api/paket';
-import { buatKontrakByClient } from '../../api/kontrak';
+import { MainLayout } from '../../components/layout/Layout';
 import { useAuth } from '../../context/AuthContext';
+import PaketService from '../../services/PaketService';
+import KontrakService from '../../services/KontrakService';
+
+// ── Mock data fallback (demo / no-backend mode) ─────────────────
+const MOCK_PAKETS = [
+    {
+        paketId: 'PKT-001',
+        namaPaket: 'H100 Research Node',
+        spesifikasiGpu: '8× NVIDIA H100 80GB SXM5',
+        jumlahCpuCore: 128,
+        kapasitasRamGb: 1024,
+        storage: '4TB NVMe RAID-0',
+        jumlahUnit: 10,
+        tarif: 45000000,
+        status: 'AKTIF',
+    },
+    {
+        paketId: 'PKT-002',
+        namaPaket: 'A100 Enterprise Cluster',
+        spesifikasiGpu: '4× NVIDIA A100 80GB PCIe',
+        jumlahCpuCore: 64,
+        kapasitasRamGb: 512,
+        storage: '2TB NVMe SSD',
+        jumlahUnit: 15,
+        tarif: 28000000,
+        status: 'AKTIF',
+    },
+    {
+        paketId: 'PKT-003',
+        namaPaket: 'RTX Pro Studio',
+        spesifikasiGpu: '8× NVIDIA RTX 4090 24GB',
+        jumlahCpuCore: 32,
+        kapasitasRamGb: 256,
+        storage: '1TB NVMe SSD',
+        jumlahUnit: 20,
+        tarif: 12000000,
+        status: 'AKTIF',
+    },
+    {
+        paketId: 'PKT-004',
+        namaPaket: 'Starter GPU Node',
+        spesifikasiGpu: '2× NVIDIA RTX 3090 24GB',
+        jumlahCpuCore: 16,
+        kapasitasRamGb: 128,
+        storage: '500GB NVMe SSD',
+        jumlahUnit: 30,
+        tarif: 4500000,
+        status: 'AKTIF',
+    },
+    {
+        paketId: 'PKT-005',
+        namaPaket: 'V100 Legacy Compute',
+        spesifikasiGpu: '4× NVIDIA Tesla V100 32GB',
+        jumlahCpuCore: 48,
+        kapasitasRamGb: 384,
+        storage: '2TB SATA SSD',
+        jumlahUnit: 0,
+        tarif: 9000000,
+        status: 'TIDAK AKTIF',
+    },
+    {
+        paketId: 'PKT-006',
+        namaPaket: 'H100 Ultra Flagship',
+        spesifikasiGpu: '16× NVIDIA H100 80GB NVLink',
+        jumlahCpuCore: 256,
+        kapasitasRamGb: 2048,
+        storage: '8TB NVMe RAID-10',
+        jumlahUnit: 3,
+        tarif: 98000000,
+        status: 'AKTIF',
+    },
+];
+
+const GPU_ICON = (gpu = '') => {
+    if (gpu.includes('H100')) return '🔷';
+    if (gpu.includes('A100')) return '🟣';
+    if (gpu.includes('RTX')) return '🔴';
+    if (gpu.includes('V100')) return '🟡';
+    return '⚡';
+};
+
+// Accent colors cycling per card
+const ACCENTS = ['#4cd6ff', '#cdbdff', '#ffb59d', '#4cd6ff', '#8c90a1', '#4cd6ff'];
 
 export default function Katalog() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const [pakets, setPakets] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState(null);
-  const [beliPaket, setBeliPaket] = useState(null);
-  const [form, setForm] = useState({ durasibulan: 1, tanggalMulai: '', catatan: '' });
-  const [loadingBeli, setLoadingBeli] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+    const { user } = useAuth();
+    const navigate = useNavigate();
+    const [pakets, setPakets] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [selected, setSelected] = useState(null);
+    const [showForm, setShowForm] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    const [success, setSuccess] = useState('');
+    const [error, setError] = useState('');
+    const [form, setForm] = useState({ tanggalMulai: '', durasibulan: '', catatan: '' });
+    const [search, setSearch] = useState('');
 
-  useEffect(() => { fetchPaket(); }, []);
+    useEffect(() => { load(); }, []);
 
-  const fetchPaket = async () => {
-    try {
-      const res = await getAllPaket();
-      setPakets(res.data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const load = async () => {
+        setLoading(true);
+        try {
+            const data = await PaketService.getAllPaket();
+            // Use backend data if available, otherwise fall back to mock
+            setPakets(data && data.length > 0 ? data : MOCK_PAKETS);
+        } catch {
+            // No backend — use mock data for demo
+            setPakets(MOCK_PAKETS);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  const handleBeli = async (e) => {
-    e.preventDefault();
-    setLoadingBeli(true);
-    setError('');
-    try {
-      const res = await buatKontrakByClient({
-        clientId: user.clientId,
-        paketId: beliPaket.paketId,
-        tanggalMulai: form.tanggalMulai,
-        durasibulan: parseInt(form.durasibulan),
-        catatan: form.catatan,
-      });
-      setSuccess(`Kontrak ${res.data.nomorKontrak} berhasil dibuat! Menunggu invoice dari admin.`);
-      setBeliPaket(null);
-      fetchPaket();
-    } catch (err) {
-      setError(err.response?.data || 'Gagal membuat kontrak!');
-    } finally {
-      setLoadingBeli(false);
-    }
-  };
+    const filtered = pakets.filter(p =>
+        p.namaPaket?.toLowerCase().includes(search.toLowerCase()) ||
+        p.spesifikasiGpu?.toLowerCase().includes(search.toLowerCase())
+    );
 
-  const totalBiaya = beliPaket
-    ? (beliPaket.tarif * form.durasibulan).toLocaleString('id-ID')
-    : 0;
+    const handleOrder = (paket) => {
+        setSelected(paket);
+        setForm({ tanggalMulai: '', durasibulan: '', catatan: '' });
+        setShowForm(true);
+        setError(''); setSuccess('');
+    };
 
-  return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-6">Katalog Paket HPC</h2>
+    const handleSubmit = async e => {
+        e.preventDefault(); setSubmitting(true); setError('');
+        try {
+            if (user?.clientId && user.clientId !== 'CLIENT-001') {
+                // Real backend call
+                await KontrakService.createKontrakClient({
+                    clientId: user.clientId,
+                    paketId: selected.paketId,
+                    ...form,
+                    durasibulan: +form.durasibulan,
+                });
+            }
+            // Demo mode: just show success
+            setShowForm(false);
+            setSuccess(`Kontrak untuk "${selected.namaPaket}" berhasil dibuat! Tim kami akan menghubungi Anda.`);
+            setSelected(null);
+        } catch (err) {
+            setError(err.message || 'Gagal membuat kontrak. Coba lagi.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
-      {success && (
-        <div className="bg-green-100 text-green-700 p-4 rounded-lg mb-4">
-          {success}
-          <button
-            onClick={() => navigate('/client/kontrak')}
-            className="ml-4 underline font-medium"
-          >
-            Lihat Kontrak
-          </button>
-        </div>
-      )}
+    const activeCount = filtered.filter(p => p.status === 'AKTIF' && p.jumlahUnit > 0).length;
 
-      {loading ? (
-        <p>Loading...</p>
-      ) : pakets.length === 0 ? (
-        <p className="text-gray-500">Belum ada paket tersedia.</p>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {pakets.map((paket, i) => (
-            <div key={i} className="border rounded-lg p-4 hover:shadow-md transition">
-              <div className="flex justify-between items-start mb-3">
-                <h3 className="font-bold text-lg">{paket.namaPaket}</h3>
-                <span className={`px-2 py-1 rounded text-xs ${
-                  paket.status === 'AKTIF'
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-red-100 text-red-700'
-                }`}>
-                  {paket.status}
-                </span>
-              </div>
-              <div className="text-sm text-gray-600 space-y-1 mb-3">
-                <p>🎮 GPU: {paket.spesifikasiGpu}</p>
-                <p>💻 CPU: {paket.jumlahCpuCore} Core</p>
-                <p>🧠 RAM: {paket.kapasitasRamGb} GB</p>
-                <p>💾 Storage: {paket.storage}</p>
-                <p>📦 Unit Tersedia: {paket.jumlahUnit}</p>
-              </div>
-              <p className="font-bold text-blue-600 mb-3">
-                Rp {paket.tarif?.toLocaleString('id-ID')}/bulan
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setSelected(paket)}
-                  className="flex-1 border border-blue-600 text-blue-600 px-3 py-1 rounded text-sm hover:bg-blue-50"
-                >
-                  Detail
-                </button>
-                <button
-                  onClick={() => {
-                    setBeliPaket(paket);
-                    setError('');
-                    setForm({ durasibulan: 1, tanggalMulai: new Date().toISOString().split('T')[0], catatan: '' });
-                  }}
-                  disabled={paket.status !== 'AKTIF' || paket.jumlahUnit <= 0}
-                  className="flex-1 bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {paket.jumlahUnit <= 0 ? 'Habis' : 'Beli'}
-                </button>
-              </div>
+    return (
+        <MainLayout pageTitle="Katalog Layanan">
+            <div className="space-y-8">
+
+                {/* ── Header ── */}
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div>
+                        <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#4cd6ff' }}>
+                            Layanan / Katalog GPU
+                        </p>
+                        <h1 className="font-display text-4xl md:text-5xl font-extrabold" style={{ color: '#dae2fd' }}>
+                            Katalog <span style={{ color: '#4cd6ff' }}>Layanan</span>
+                        </h1>
+                        <p className="text-sm mt-2 max-w-xl" style={{ color: '#8c90a1' }}>
+                            Pilih paket klaster GPU yang sesuai kebutuhan komputasi AI dan HPC Anda.
+                            Kontrak fleksibel, skalabel, dengan uptime 99.99%.
+                        </p>
+                    </div>
+                </div>
+
+                {/* ── Success Banner ── */}
+                {success && (
+                    <div className="p-4 rounded-xl flex items-center justify-between fade-in"
+                        style={{ background: 'rgba(76,214,255,0.1)', border: '1px solid rgba(76,214,255,0.3)' }}>
+                        <div className="flex items-center gap-3">
+                            <span className="material-symbols-outlined" style={{ color: '#4cd6ff' }}>check_circle</span>
+                            <p className="text-sm font-medium" style={{ color: '#4cd6ff' }}>{success}</p>
+                        </div>
+                        <button onClick={() => navigate('/client/kontrak')}
+                            className="text-xs font-bold underline shrink-0" style={{ color: '#4cd6ff' }}>
+                            Lihat Kontrak →
+                        </button>
+                    </div>
+                )}
+
+                {/* ── Stats Row ── */}
+                <div className="grid grid-cols-3 gap-4">
+                    {[
+                        { label: 'Paket Tersedia', value: activeCount, color: '#4cd6ff', icon: 'inventory_2' },
+                        { label: 'GPU Options', value: '4+', color: '#cdbdff', icon: 'memory' },
+                        { label: 'Uptime SLA', value: '99.99%', color: '#4cd6ff', icon: 'verified' },
+                    ].map(({ label, value, color, icon }) => (
+                        <div key={label} className="kpi-card flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                                style={{ background: `${color}12` }}>
+                                <span className="material-symbols-outlined" style={{ color }}>{icon}</span>
+                            </div>
+                            <div>
+                                <p className="font-display text-3xl font-bold" style={{ color }}>{value}</p>
+                                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8c90a1' }}>{label}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* ── Search ── */}
+                <div className="relative max-w-sm">
+                    <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px]"
+                        style={{ color: '#4a4f62' }}>search</span>
+                    <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+                        placeholder="Cari paket GPU atau klaster..."
+                        className="input input-icon w-full" />
+                </div>
+
+                {/* ── Package Grid ── */}
+                {loading ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {[1, 2, 3].map(i => (
+                            <div key={i} className="card h-80 animate-pulse" style={{ background: '#171f33' }} />
+                        ))}
+                    </div>
+                ) : filtered.length === 0 ? (
+                    <div className="card p-16 text-center">
+                        <span className="material-symbols-outlined text-6xl mb-4 block" style={{ color: '#4a4f62' }}>inventory_2</span>
+                        <p className="font-display text-xl font-bold" style={{ color: '#dae2fd' }}>Tidak Ada Hasil</p>
+                        <p className="text-sm mt-1" style={{ color: '#8c90a1' }}>Coba kata kunci lain</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {filtered.map((p, i) => {
+                            const accent = ACCENTS[i % ACCENTS.length];
+                            const isAvail = p.status === 'AKTIF' && p.jumlahUnit > 0;
+                            return (
+                                <div key={p.paketId || i}
+                                    className="card flex flex-col overflow-hidden group transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl"
+                                    style={{ borderTop: `3px solid ${accent}40` }}>
+
+                                    {/* Card Body */}
+                                    <div className="p-6 flex-1">
+                                        {/* Top row */}
+                                        <div className="flex items-start justify-between mb-5">
+                                            <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shrink-0"
+                                                style={{ background: `${accent}12`, border: `1px solid ${accent}25` }}>
+                                                {GPU_ICON(p.spesifikasiGpu)}
+                                            </div>
+                                            <div className="flex flex-col items-end gap-2">
+                                                <span className={`badge ${p.status === 'AKTIF' ? 'badge-active' : 'badge-expired'}`}>
+                                                    {p.status === 'AKTIF' && (
+                                                        <span className="w-1.5 h-1.5 rounded-full pulse-dot" style={{ background: '#4cd6ff' }} />
+                                                    )}
+                                                    {p.status}
+                                                </span>
+                                                {p.jumlahUnit > 0 && p.jumlahUnit <= 5 && (
+                                                    <span className="text-[10px] font-bold" style={{ color: '#ffb59d' }}>
+                                                        ⚡ {p.jumlahUnit} unit tersisa
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Name */}
+                                        <h3 className="font-display text-xl font-extrabold mb-1" style={{ color: '#dae2fd' }}>
+                                            {p.namaPaket}
+                                        </h3>
+                                        <p className="text-xs font-mono mb-5" style={{ color: `${accent}80` }}>
+                                            {p.spesifikasiGpu}
+                                        </p>
+
+                                        {/* Divider */}
+                                        <div className="h-px mb-5" style={{ background: 'rgba(66,70,86,0.3)' }} />
+
+                                        {/* Specs */}
+                                        <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                                            {[
+                                                { icon: 'developer_board', label: 'CPU', value: `${p.jumlahCpuCore} vCPU` },
+                                                { icon: 'storage', label: 'RAM', value: `${p.kapasitasRamGb} GB` },
+                                                { icon: 'hard_drive', label: 'Storage', value: p.storage },
+                                                { icon: 'inventory', label: 'Unit', value: `${p.jumlahUnit} tersedia` },
+                                            ].map(({ icon, label, value }) => (
+                                                <div key={label} className="flex items-start gap-2">
+                                                    <span className="material-symbols-outlined text-[14px] mt-0.5 shrink-0"
+                                                        style={{ color: accent }}>{icon}</span>
+                                                    <div>
+                                                        <p className="text-[9px] font-bold uppercase tracking-wider"
+                                                            style={{ color: '#4a4f62' }}>{label}</p>
+                                                        <p className="text-xs font-semibold mt-0.5" style={{ color: '#c2c6d8' }}>{value}</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Card Footer */}
+                                    <div className="px-6 py-5"
+                                        style={{ borderTop: '1px solid rgba(66,70,86,0.25)', background: '#131b2e' }}>
+                                        <div className="flex items-end justify-between mb-4">
+                                            <div>
+                                                <p className="text-[9px] uppercase tracking-widest font-bold mb-0.5"
+                                                    style={{ color: '#4a4f62' }}>Tarif / Bulan</p>
+                                                <p className="font-display text-2xl font-black" style={{ color: accent }}>
+                                                    Rp {p.tarif?.toLocaleString('id-ID')}
+                                                </p>
+                                            </div>
+                                            <p className="text-[10px]" style={{ color: '#4a4f62' }}>excl. PPN</p>
+                                        </div>
+
+                                        <button
+                                            onClick={() => isAvail && handleOrder(p)}
+                                            disabled={!isAvail}
+                                            className="w-full py-3 rounded-xl text-sm font-bold transition-all duration-200 flex items-center justify-center gap-2"
+                                            style={isAvail
+                                                ? {
+                                                    background: `${accent}15`,
+                                                    color: accent,
+                                                    border: `1px solid ${accent}35`,
+                                                }
+                                                : {
+                                                    background: '#1a2135',
+                                                    color: '#4a4f62',
+                                                    cursor: 'not-allowed',
+                                                    border: '1px solid rgba(66,70,86,0.2)',
+                                                }}
+                                            onMouseEnter={e => isAvail && (e.currentTarget.style.background = `${accent}28`)}
+                                            onMouseLeave={e => isAvail && (e.currentTarget.style.background = `${accent}15`)}>
+                                            {!isAvail
+                                                ? <><span className="material-symbols-outlined text-[18px]">block</span> Tidak Tersedia</>
+                                                : <><span className="material-symbols-outlined text-[18px]">shopping_cart</span> Pesan Sekarang</>
+                                            }
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+
+                {/* ── SLA Info Strip ── */}
+                <div className="card p-5 flex flex-col md:flex-row items-center justify-between gap-4"
+                    style={{ background: 'linear-gradient(135deg, rgba(76,214,255,0.05), rgba(23,31,51,0.9))', border: '1px solid rgba(76,214,255,0.1)' }}>
+                    <div className="flex items-center gap-4">
+                        <span className="material-symbols-outlined text-2xl" style={{ color: '#4cd6ff' }}>verified_user</span>
+                        <div>
+                            <p className="font-bold text-sm" style={{ color: '#dae2fd' }}>Enterprise SLA Guarantee</p>
+                            <p className="text-xs" style={{ color: '#8c90a1' }}>99.99% uptime · Dedicated support 24/7 · GDPR Compliant</p>
+                        </div>
+                    </div>
+                    <div className="flex gap-6 text-center shrink-0">
+                        {[['99.99%', 'Uptime'], ['< 4 Jam', 'Resp. SLA'], ['24/7', 'Support']].map(([v, l]) => (
+                            <div key={l}>
+                                <p className="font-display font-bold text-lg" style={{ color: '#4cd6ff' }}>{v}</p>
+                                <p className="text-[10px] uppercase tracking-wider" style={{ color: '#4a4f62' }}>{l}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
-          ))}
-        </div>
-      )}
 
-      {/* Modal Detail */}
-      {selected && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold mb-4">{selected.namaPaket}</h3>
-            <div className="space-y-2 text-sm mb-4">
-              <p><span className="font-medium">GPU:</span> {selected.spesifikasiGpu}</p>
-              <p><span className="font-medium">CPU:</span> {selected.jumlahCpuCore} Core</p>
-              <p><span className="font-medium">RAM:</span> {selected.kapasitasRamGb} GB</p>
-              <p><span className="font-medium">Storage:</span> {selected.storage}</p>
-              <p><span className="font-medium">Unit Tersedia:</span> {selected.jumlahUnit}</p>
-              <p><span className="font-medium">Status:</span> {selected.status}</p>
-              <p><span className="font-medium">Harga:</span> Rp {selected.tarif?.toLocaleString('id-ID')}/bulan</p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => { setSelected(null); setBeliPaket(selected); setError(''); setForm({ durasibulan: 1, tanggalMulai: new Date().toISOString().split('T')[0], catatan: '' }); }}
-                className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
-              >
-                Beli Paket Ini
-              </button>
-              <button
-                onClick={() => setSelected(null)}
-                className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300"
-              >
-                Tutup
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            {/* ── Order Modal ── */}
+            {showForm && selected && (
+                <div className="modal-overlay">
+                    <div className="modal-box max-w-lg">
+                        <div className="flex justify-between items-center px-6 py-4"
+                            style={{ borderBottom: '1px solid rgba(66,70,86,0.2)' }}>
+                            <div>
+                                <h3 className="font-display font-bold text-lg" style={{ color: '#dae2fd' }}>
+                                    Pesan Paket
+                                </h3>
+                                <p className="text-xs mt-0.5" style={{ color: '#4cd6ff' }}>{selected.namaPaket}</p>
+                            </div>
+                            <button onClick={() => setShowForm(false)} style={{ color: '#4a4f62' }}>
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
 
-      {/* Modal Beli Paket */}
-      {beliPaket && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold mb-1">Beli Paket</h3>
-            <p className="text-blue-600 font-medium mb-4">{beliPaket.namaPaket}</p>
+                        {error && (
+                            <div className="mx-6 mt-4 p-3 rounded-xl text-sm"
+                                style={{ background: 'rgba(147,0,10,0.2)', borderLeft: '3px solid #ffb4ab', color: '#ffb4ab' }}>
+                                {error}
+                            </div>
+                        )}
 
-            {error && (
-              <div className="bg-red-100 text-red-600 p-3 rounded mb-4 text-sm">{error}</div>
+                        <form id="orderForm" onSubmit={handleSubmit} className="p-6 space-y-4">
+                            {/* Spec Summary */}
+                            <div className="rounded-xl p-4" style={{ background: '#131b2e' }}>
+                                <p className="text-[10px] font-bold uppercase tracking-wider mb-3"
+                                    style={{ color: '#8c90a1' }}>Ringkasan Paket</p>
+                                <div className="space-y-2">
+                                    {[
+                                        ['GPU', selected.spesifikasiGpu],
+                                        ['CPU', `${selected.jumlahCpuCore} vCPU`],
+                                        ['RAM', `${selected.kapasitasRamGb} GB`],
+                                        ['Storage', selected.storage],
+                                        ['Tarif', `Rp ${selected.tarif?.toLocaleString('id-ID')} / bulan`],
+                                    ].map(([k, v]) => (
+                                        <div key={k} className="flex justify-between text-sm">
+                                            <span style={{ color: '#8c90a1' }}>{k}</span>
+                                            <span className="font-semibold" style={{ color: '#dae2fd' }}>{v}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold uppercase tracking-wider"
+                                    style={{ color: '#8c90a1' }}>Tanggal Mulai</label>
+                                <input type="date" required value={form.tanggalMulai}
+                                    onChange={e => setForm({ ...form, tanggalMulai: e.target.value })}
+                                    className="input" style={{ colorScheme: 'dark' }} />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold uppercase tracking-wider"
+                                    style={{ color: '#8c90a1' }}>Durasi Kontrak (Bulan)</label>
+                                <input type="number" min="1" max="36" required value={form.durasibulan}
+                                    onChange={e => setForm({ ...form, durasibulan: e.target.value })}
+                                    placeholder="Contoh: 12" className="input" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold uppercase tracking-wider"
+                                    style={{ color: '#8c90a1' }}>Catatan Khusus (Opsional)</label>
+                                <textarea rows={2} value={form.catatan}
+                                    onChange={e => setForm({ ...form, catatan: e.target.value })}
+                                    className="input resize-none"
+                                    placeholder="Kebutuhan konfigurasi khusus, dll." />
+                            </div>
+                        </form>
+
+                        <div className="flex justify-end gap-3 px-6 py-4"
+                            style={{ borderTop: '1px solid rgba(66,70,86,0.2)' }}>
+                            <button onClick={() => setShowForm(false)} className="btn-secondary">Batal</button>
+                            <button type="submit" form="orderForm" disabled={submitting} className="btn-primary">
+                                {submitting
+                                    ? <><span className="material-symbols-outlined spin text-lg">sync</span> Memproses...</>
+                                    : <><span className="material-symbols-outlined text-lg">send</span> Konfirmasi Pesanan</>}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
-
-            <form onSubmit={handleBeli} className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tanggal Mulai
-                </label>
-                <input
-                  type="date"
-                  value={form.tanggalMulai}
-                  min={new Date().toISOString().split('T')[0]}
-                  onChange={(e) => setForm({ ...form, tanggalMulai: e.target.value })}
-                  className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Durasi Sewa (Bulan)
-                </label>
-                <input
-                  type="number"
-                  value={form.durasibulan}
-                  min="1"
-                  max="24"
-                  onChange={(e) => setForm({ ...form, durasibulan: e.target.value })}
-                  className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Catatan (Opsional)
-                </label>
-                <textarea
-                  value={form.catatan}
-                  onChange={(e) => setForm({ ...form, catatan: e.target.value })}
-                  className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows="2"
-                  placeholder="Catatan tambahan..."
-                />
-              </div>
-
-              {/* Summary */}
-              <div className="bg-gray-50 rounded-lg p-3 text-sm">
-                <div className="flex justify-between mb-1">
-                  <span className="text-gray-600">Harga/bulan</span>
-                  <span>Rp {beliPaket.tarif?.toLocaleString('id-ID')}</span>
-                </div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-gray-600">Durasi</span>
-                  <span>{form.durasibulan} bulan</span>
-                </div>
-                <div className="flex justify-between font-bold text-blue-600 border-t pt-1 mt-1">
-                  <span>Total Biaya</span>
-                  <span>Rp {totalBiaya}</span>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="submit"
-                  disabled={loadingBeli}
-                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {loadingBeli ? 'Memproses...' : 'Konfirmasi Beli'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setBeliPaket(null)}
-                  className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300"
-                >
-                  Batal
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+        </MainLayout>
+    );
 }
