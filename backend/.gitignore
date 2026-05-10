@@ -35,3 +35,6 @@ build/
 # Environment
 src/main/resources/application.properties
 
+# Environment variables
+backend/.env
+*.env

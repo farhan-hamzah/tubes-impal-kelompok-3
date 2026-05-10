@@ -1,110 +1,110 @@
-package com.tensorldease.backend.config;
+// package com.tensorldease.backend.config;
 
-import com.tensorldease.backend.model.Admin;
-import com.tensorldease.backend.model.Client;
-import com.tensorldease.backend.model.PaketHpc;
-import com.tensorldease.backend.model.User;
-import com.tensorldease.backend.repository.AdminRepository;
-import com.tensorldease.backend.repository.ClientRepository;
-import com.tensorldease.backend.repository.PaketHpcRepository;
-import com.tensorldease.backend.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Profile;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Component;
+// import com.tensorldease.backend.model.Admin;
+// import com.tensorldease.backend.model.Client;
+// import com.tensorldease.backend.model.PaketHpc;
+// import com.tensorldease.backend.model.User;
+// import com.tensorldease.backend.repository.AdminRepository;
+// import com.tensorldease.backend.repository.ClientRepository;
+// import com.tensorldease.backend.repository.PaketHpcRepository;
+// import com.tensorldease.backend.repository.UserRepository;
+// import org.springframework.beans.factory.annotation.Autowired;
+// import org.springframework.boot.CommandLineRunner;
+// import org.springframework.context.annotation.Profile;
+// import org.springframework.security.crypto.password.PasswordEncoder;
+// import org.springframework.stereotype.Component;
 
-import java.util.UUID;
+// import java.util.UUID;
 
-/**
- * DataSeeder — hanya aktif saat profile "local" atau "test".
- * Menyeed akun admin & client default untuk pengembangan lokal (H2).
- *
- * Admin  → email: admin@tensor.id   | password: admin123
- * Client → email: client@tensor.id  | password: client123
- */
-@Component
-@Profile({"local", "test"})
-public class DataSeeder implements CommandLineRunner {
+// /**
+//  * DataSeeder — hanya aktif saat profile "local" atau "test".
+//  * Menyeed akun admin & client default untuk pengembangan lokal (H2).
+//  *
+//  * Admin  → email: admin@tensor.id   | password: admin123
+//  * Client → email: client@tensor.id  | password: client123
+//  */
+// @Component
+// @Profile({"local", "test"})
+// public class DataSeeder implements CommandLineRunner {
 
-    @Autowired private UserRepository userRepository;
-    @Autowired private AdminRepository adminRepository;
-    @Autowired private ClientRepository clientRepository;
-    @Autowired private PaketHpcRepository paketHpcRepository;
-    @Autowired private PasswordEncoder passwordEncoder;
+//     @Autowired private UserRepository userRepository;
+//     @Autowired private AdminRepository adminRepository;
+//     @Autowired private ClientRepository clientRepository;
+//     @Autowired private PaketHpcRepository paketHpcRepository;
+//     @Autowired private PasswordEncoder passwordEncoder;
 
-    @Override
-    public void run(String... args) {
-        seedAdmin();
-        seedClient();
-        seedPakets();
-        System.out.println("========================================");
-        System.out.println("  DataSeeder selesai — akun tersedia:");
-        System.out.println("  ADMIN  → admin@tensor.id   / admin123");
-        System.out.println("  CLIENT → client@tensor.id  / client123");
-        System.out.println("========================================");
-    }
+//     @Override
+//     public void run(String... args) {
+//         seedAdmin();
+//         seedClient();
+//         seedPakets();
+//         System.out.println("========================================");
+//         System.out.println("  DataSeeder selesai — akun tersedia:");
+//         System.out.println("  ADMIN  → admin@tensor.id   / admin123");
+//         System.out.println("  CLIENT → client@tensor.id  / client123");
+//         System.out.println("========================================");
+//     }
 
-    private void seedAdmin() {
-        if (userRepository.existsByEmail("admin@tensor.id")) return;
+//     private void seedAdmin() {
+//         if (userRepository.existsByEmail("admin@tensor.id")) return;
 
-        User user = new User();
-        user.setUserId(UUID.randomUUID().toString());
-        user.setNama("Super Admin");
-        user.setEmail("admin@tensor.id");
-        user.setPassword(passwordEncoder.encode("admin123"));
-        user.setNomorTelepon("081234567890");
-        user.setUserRole(User.UserRole.ADMIN);
-        user.setIsActive(true);
-        userRepository.save(user);
+//         User user = new User();
+//         user.setUserId(UUID.randomUUID().toString());
+//         user.setNama("Super Admin");
+//         user.setEmail("admin@tensor.id");
+//         user.setPassword(passwordEncoder.encode("admin123"));
+//         user.setNomorTelepon("081234567890");
+//         user.setUserRole(User.UserRole.ADMIN);
+//         user.setIsActive(true);
+//         userRepository.save(user);
 
-        Admin admin = new Admin();
-        admin.setAdminId(UUID.randomUUID().toString());
-        admin.setUser(user);
-        adminRepository.save(admin);
-    }
+//         Admin admin = new Admin();
+//         admin.setAdminId(UUID.randomUUID().toString());
+//         admin.setUser(user);
+//         adminRepository.save(admin);
+//     }
 
-    private void seedClient() {
-        if (userRepository.existsByEmail("client@tensor.id")) return;
+//     private void seedClient() {
+//         if (userRepository.existsByEmail("client@tensor.id")) return;
 
-        User user = new User();
-        user.setUserId(UUID.randomUUID().toString());
-        user.setNama("Client Demo");
-        user.setEmail("client@tensor.id");
-        user.setPassword(passwordEncoder.encode("client123"));
-        user.setNomorTelepon("089876543210");
-        user.setUserRole(User.UserRole.CLIENT);
-        user.setIsActive(true);
-        userRepository.save(user);
+//         User user = new User();
+//         user.setUserId(UUID.randomUUID().toString());
+//         user.setNama("Client Demo");
+//         user.setEmail("client@tensor.id");
+//         user.setPassword(passwordEncoder.encode("client123"));
+//         user.setNomorTelepon("089876543210");
+//         user.setUserRole(User.UserRole.CLIENT);
+//         user.setIsActive(true);
+//         userRepository.save(user);
 
-        Client client = new Client();
-        client.setClientId(UUID.randomUUID().toString());
-        client.setUser(user);
-        clientRepository.save(client);
-    }
+//         Client client = new Client();
+//         client.setClientId(UUID.randomUUID().toString());
+//         client.setUser(user);
+//         clientRepository.save(client);
+//     }
 
-    private void seedPakets() {
-        if (paketHpcRepository.count() > 0) return;
+//     private void seedPakets() {
+//         if (paketHpcRepository.count() > 0) return;
 
-        String[][] pakets = {
-            {"H100 Research Node",       "8x NVIDIA H100 80GB SXM5",   "128", "1024", "4TB NVMe RAID-0", "10", "45000000"},
-            {"A100 Enterprise Cluster",  "4x NVIDIA A100 80GB PCIe",   "64",  "512",  "2TB NVMe SSD",    "15", "28000000"},
-            {"RTX Pro Studio",           "8x NVIDIA RTX 4090 24GB",    "32",  "256",  "1TB NVMe SSD",    "20", "12000000"},
-            {"Starter GPU Node",         "2x NVIDIA RTX 3090 24GB",    "16",  "128",  "500GB SSD",       "30",  "4500000"},
-        };
+//         String[][] pakets = {
+//             {"H100 Research Node",       "8x NVIDIA H100 80GB SXM5",   "128", "1024", "4TB NVMe RAID-0", "10", "45000000"},
+//             {"A100 Enterprise Cluster",  "4x NVIDIA A100 80GB PCIe",   "64",  "512",  "2TB NVMe SSD",    "15", "28000000"},
+//             {"RTX Pro Studio",           "8x NVIDIA RTX 4090 24GB",    "32",  "256",  "1TB NVMe SSD",    "20", "12000000"},
+//             {"Starter GPU Node",         "2x NVIDIA RTX 3090 24GB",    "16",  "128",  "500GB SSD",       "30",  "4500000"},
+//         };
 
-        for (String[] p : pakets) {
-            PaketHpc paket = new PaketHpc();
-            paket.setPaketId(UUID.randomUUID().toString());
-            paket.setNamaPaket(p[0]);
-            paket.setSpesifikasiGpu(p[1]);
-            paket.setJumlahCpuCore(Integer.parseInt(p[2]));
-            paket.setKapasitasRamGb(Integer.parseInt(p[3]));
-            paket.setStorage(p[4]);
-            paket.setJumlahUnit(Integer.parseInt(p[5]));
-            paket.setTarif(Double.parseDouble(p[6]));
-            paket.setStatus("AKTIF");
-            paketHpcRepository.save(paket);
-        }
-    }
-}
+//         for (String[] p : pakets) {
+//             PaketHpc paket = new PaketHpc();
+//             paket.setPaketId(UUID.randomUUID().toString());
+//             paket.setNamaPaket(p[0]);
+//             paket.setSpesifikasiGpu(p[1]);
+//             paket.setJumlahCpuCore(Integer.parseInt(p[2]));
+//             paket.setKapasitasRamGb(Integer.parseInt(p[3]));
+//             paket.setStorage(p[4]);
+//             paket.setJumlahUnit(Integer.parseInt(p[5]));
+//             paket.setTarif(Double.parseDouble(p[6]));
+//             paket.setStatus("AKTIF");
+//             paketHpcRepository.save(paket);
+//         }
+//     }
+// }
