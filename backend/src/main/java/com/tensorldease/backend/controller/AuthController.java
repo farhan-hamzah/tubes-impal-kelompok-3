@@ -10,12 +10,11 @@ import com.tensorldease.backend.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://localhost:5173")
 public class AuthController {
 
     @Autowired
@@ -41,13 +40,17 @@ public class AuthController {
         }
     }
 
-    // Lupa Password
+    // Forgot Password — token dikembalikan langsung di response
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(
             @Valid @RequestBody ForgotPasswordRequest request) {
         try {
-            authService.forgotPassword(request);
-            return ResponseEntity.ok("Email reset password telah dikirim!");
+            String token = authService.forgotPassword(request);
+            return ResponseEntity.ok(Map.of(
+                "message", "Token reset password berhasil dibuat. Gunakan token ini untuk reset password.",
+                "resetToken", token,
+                "expiredIn", "15 menit"
+            ));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -64,5 +67,4 @@ public class AuthController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-
 }

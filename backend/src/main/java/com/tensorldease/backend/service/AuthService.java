@@ -6,23 +6,23 @@ import com.tensorldease.backend.dto.request.RegisterRequest;
 import com.tensorldease.backend.dto.request.ResetPasswordRequest;
 import com.tensorldease.backend.dto.response.LoginResponse;
 import com.tensorldease.backend.dto.response.UserResponse;
+import com.tensorldease.backend.model.Admin;
 import com.tensorldease.backend.model.Client;
 import com.tensorldease.backend.model.PasswordResetToken;
+import com.tensorldease.backend.model.SessionToken;
 import com.tensorldease.backend.model.User;
+import com.tensorldease.backend.repository.AdminRepository;
 import com.tensorldease.backend.repository.ClientRepository;
 import com.tensorldease.backend.repository.PasswordResetTokenRepository;
+import com.tensorldease.backend.repository.SessionTokenRepository;
 import com.tensorldease.backend.repository.UserRepository;
 import com.tensorldease.backend.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.beans.factory.annotation.Value;
 import java.time.LocalDateTime;
 import java.util.UUID;
-import com.tensorldease.backend.model.SessionToken;
-import com.tensorldease.backend.repository.SessionTokenRepository;
-import com.tensorldease.backend.model.Admin;
-import com.tensorldease.backend.repository.AdminRepository;
 
 @Service
 public class AuthService {
@@ -46,26 +46,23 @@ public class AuthService {
     private PasswordResetTokenRepository passwordResetTokenRepository;
 
     @Autowired
-    private EmailService emailService;
-
-    @Autowired
     private SessionTokenRepository sessionTokenRepository;
 
     @Value("${app.jwt.expiration}")
     private long jwtExpiration;
-    
-    // Lupa Password - Request Reset
-    public void forgotPassword(ForgotPasswordRequest request) {
+
+    // Lupa Password - token dikembalikan langsung di response (tanpa email)
+    public String forgotPassword(ForgotPasswordRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
             .orElseThrow(() -> new RuntimeException("Email tidak terdaftar!"));
 
-        // Hapus token lama kalau ada
+        // Hapus token lama
         passwordResetTokenRepository.deleteByUserUserId(user.getUserId());
 
-        // Generate token unik
+        // Generate token baru
         String token = UUID.randomUUID().toString();
 
-        // Simpan token ke DB
+        // Simpan ke DB
         PasswordResetToken resetToken = new PasswordResetToken();
         resetToken.setUser(user);
         resetToken.setToken(token);
@@ -73,8 +70,8 @@ public class AuthService {
         resetToken.setIsUsed(false);
         passwordResetTokenRepository.save(resetToken);
 
-        // Kirim email
-        emailService.sendResetPasswordEmail(user.getEmail(), token);
+        // Kembalikan token langsung — tidak kirim email
+        return token;
     }
 
     // Reset Password dengan token
@@ -83,33 +80,27 @@ public class AuthService {
             .findByToken(request.getToken())
             .orElseThrow(() -> new RuntimeException("Token tidak valid!"));
 
-        // Cek token expired
         if (resetToken.getExpiredAt().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("Token sudah expired! Minta reset password lagi.");
         }
 
-        // Cek token sudah dipakai
         if (resetToken.getIsUsed()) {
             throw new RuntimeException("Token sudah digunakan!");
         }
 
-        // Update password
         User user = resetToken.getUser();
         user.setPassword(passwordEncoder.encode(request.getPasswordBaru()));
         userRepository.save(user);
 
-        // Tandai token sudah dipakai
         resetToken.setIsUsed(true);
         passwordResetTokenRepository.save(resetToken);
     }
 
     public UserResponse register(RegisterRequest request) {
-        // Cek email sudah terdaftar
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email sudah digunakan!");
         }
 
-        // Buat user baru
         User user = new User();
         user.setUserId(UUID.randomUUID().toString());
         user.setNama(request.getNama());
@@ -120,7 +111,6 @@ public class AuthService {
         user.setIsActive(true);
         userRepository.save(user);
 
-        // Buat client
         Client client = new Client();
         client.setClientId(UUID.randomUUID().toString());
         client.setUser(user);
