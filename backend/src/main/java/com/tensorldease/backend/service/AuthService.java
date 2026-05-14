@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -52,17 +53,15 @@ public class AuthService {
     private long jwtExpiration;
 
     // Lupa Password - token dikembalikan langsung di response (tanpa email)
+    @Transactional
     public String forgotPassword(ForgotPasswordRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
             .orElseThrow(() -> new RuntimeException("Email tidak terdaftar!"));
 
-        // Hapus token lama
         passwordResetTokenRepository.deleteByUserUserId(user.getUserId());
 
-        // Generate token baru
         String token = UUID.randomUUID().toString();
 
-        // Simpan ke DB
         PasswordResetToken resetToken = new PasswordResetToken();
         resetToken.setUser(user);
         resetToken.setToken(token);
@@ -70,7 +69,6 @@ public class AuthService {
         resetToken.setIsUsed(false);
         passwordResetTokenRepository.save(resetToken);
 
-        // Kembalikan token langsung — tidak kirim email
         return token;
     }
 
