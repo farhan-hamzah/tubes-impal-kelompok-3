@@ -1,4 +1,7 @@
+import { useState, useEffect } from 'react';
 import { MainLayout } from '../../components/layout/Layout';
+import { invoiceService } from '../../services/InvoiceService';
+import kontrakService from '../../services/KontrakService';
 
 const mockRevenue = [
     { month: 'Jan', value: 82 }, { month: 'Feb', value: 95 },
@@ -16,6 +19,28 @@ const mockClients = [
 
 export default function Laporan() {
     const max = Math.max(...mockRevenue.map(r => r.value));
+    const [invoices, setInvoices] = useState([]);
+    const [contracts, setContracts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [inv, kon] = await Promise.all([
+                    invoiceService.getAllInvoice(),
+                    kontrakService.getAllKontrak(),
+                ]);
+                setInvoices(Array.isArray(inv) ? inv : []);
+                setContracts(Array.isArray(kon) ? kon : []);
+            } catch (err) {
+                setError(err.message || 'Gagal memuat data laporan.');
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
 
     return (
         <MainLayout pageTitle="Laporan & Analitik">
@@ -29,6 +54,13 @@ export default function Laporan() {
                         Tinjauan performa bisnis, penggunaan sumber daya, dan pendapatan secara menyeluruh.
                     </p>
                 </div>
+                {error && (
+                    <div className="p-4 rounded-xl flex items-center gap-3 fade-in"
+                        style={{ background: 'rgba(147,0,10,0.2)', borderLeft: '3px solid #ffb4ab' }}>
+                        <span className="material-symbols-outlined" style={{ color: '#ffb4ab' }}>report</span>
+                        <p className="text-sm" style={{ color: '#ffb4ab' }}>{error}</p>
+                    </div>
+                )}
 
                 {/* KPI Cards */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

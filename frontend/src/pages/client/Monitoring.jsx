@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { MainLayout } from '../../components/layout/Layout';
+import { useAuth } from '../../context/AuthContext';
+import kontrakService from '../../services/KontrakService';
 
 // ── Mock real-time data generator ──
 const randomBetween = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -42,6 +44,7 @@ const MetricRow = ({ label, value, unit, max, color }) => (
 );
 
 export default function Monitoring() {
+    const { user } = useAuth();
     const [metrics, setMetrics] = useState({
         gpuUtil: 84, cpuUtil: 32, vramUsed: 42, ramUsed: 512,
         temp: 67, power: 320, netIn: 1.4, netOut: 0.8,
@@ -69,6 +72,22 @@ export default function Monitoring() {
         return () => clearInterval(t);
     }, []);
 
+    const [contracts, setContracts] = useState([]);
+    const [kontrakError, setKontrakError] = useState('');
+
+    useEffect(() => {
+        if (!user?.clientId) return;
+        const fetchKontrak = async () => {
+            try {
+                const data = await kontrakService.getKontrakByClient(user.clientId);
+                setContracts(Array.isArray(data) ? data : []);
+            } catch (err) {
+                setKontrakError(err.message || 'Gagal memuat data kontrak.');
+            }
+        };
+        fetchKontrak();
+    }, [user?.clientId]);
+
     const nodes = [
         { id: 'H100-Node-01', type: 'NVIDIA H100 80GB', status: 'ACTIVE' },
         { id: 'H100-Node-02', type: 'NVIDIA H100 80GB', status: 'ACTIVE' },
@@ -80,6 +99,13 @@ export default function Monitoring() {
     return (
         <MainLayout pageTitle="Monitoring Klaster">
             <div className="space-y-8">
+                {kontrakError && (
+                    <div className="p-4 rounded-xl flex items-center gap-3 fade-in"
+                        style={{ background: 'rgba(147,0,10,0.2)', borderLeft: '3px solid #ffb4ab' }}>
+                        <span className="material-symbols-outlined" style={{ color: '#ffb4ab' }}>report</span>
+                        <p className="text-sm" style={{ color: '#ffb4ab' }}>{kontrakError}</p>
+                    </div>
+                )}
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                     <div>

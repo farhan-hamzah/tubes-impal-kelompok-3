@@ -16,10 +16,4 @@ class InvoiceService extends BaseService {
     }
 }
 
-class PaymentService extends BaseService {
-    constructor() { super('/payment'); }
-    async getSnapToken(invoiceId)   { return this.post(`/snap-token/${invoiceId}`); }
-}
-
 export const invoiceService = new InvoiceService();
-export const paymentService = new PaymentService();
