@@ -12,65 +12,6 @@ const tgl = (d) => {
     return new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 };
 
-// ── Mock invoice data (demo / no backend) ────────────────────────
-const MOCK_INVOICES = [
-    {
-        invoiceId: 'INV-001',
-        nomorInvoice: 'INV-2024-001',
-        nomorKontrak: 'KTR-2024-001',
-        namaPaket: 'H100 Research Node',
-        tagihanMulai: '2024-01-01',
-        tagihanAkhir: '2024-01-31',
-        tanggalJatuhTempo: '2024-02-10',
-        tanggalBayar: '2024-02-08',
-        jumlahTagihan: 45000000,
-        statusPembayaran: 'PAID',
-        buktiPembayaran: null,
-        metodePembayaran: 'Transfer Bank BCA',
-    },
-    {
-        invoiceId: 'INV-002',
-        nomorInvoice: 'INV-2024-002',
-        nomorKontrak: 'KTR-2024-001',
-        namaPaket: 'H100 Research Node',
-        tagihanMulai: '2024-02-01',
-        tagihanAkhir: '2024-02-29',
-        tanggalJatuhTempo: '2024-03-10',
-        tanggalBayar: '2024-03-05',
-        jumlahTagihan: 45000000,
-        statusPembayaran: 'PAID',
-        buktiPembayaran: null,
-        metodePembayaran: 'Transfer Bank Mandiri',
-    },
-    {
-        invoiceId: 'INV-003',
-        nomorInvoice: 'INV-2024-003',
-        nomorKontrak: 'KTR-2024-001',
-        namaPaket: 'H100 Research Node',
-        tagihanMulai: '2024-03-01',
-        tagihanAkhir: '2024-03-31',
-        tanggalJatuhTempo: '2024-04-10',
-        tanggalBayar: null,
-        jumlahTagihan: 45000000,
-        statusPembayaran: 'UNPAID',
-        buktiPembayaran: null,
-        metodePembayaran: null,
-    },
-    {
-        invoiceId: 'INV-004',
-        nomorInvoice: 'INV-2024-004',
-        nomorKontrak: 'KTR-2024-002',
-        namaPaket: 'RTX Pro Studio',
-        tagihanMulai: '2024-03-01',
-        tagihanAkhir: '2024-03-31',
-        tanggalJatuhTempo: '2024-03-20',
-        tanggalBayar: null,
-        jumlahTagihan: 12000000,
-        statusPembayaran: 'OVERDUE',
-        buktiPembayaran: null,
-        metodePembayaran: null,
-    },
-];
 
 const STATUS_CONFIG = {
     PAID:    { label: 'Lunas',        bg: 'rgba(76,214,255,0.12)',  color: '#4cd6ff',  icon: 'check_circle' },
@@ -109,12 +50,12 @@ export default function RiwayatTransaksi() {
     const load = async () => {
         setLoading(true);
         try {
-            const data = user?.clientId && user.clientId !== 'CLIENT-001'
+            const data = user?.clientId
                 ? await invoiceService.getInvoiceByClient(user.clientId)
-                : null;
-            setInvoices(data && data.length > 0 ? data : MOCK_INVOICES);
+                : [];
+            setInvoices(Array.isArray(data) ? data : []);
         } catch {
-            setInvoices(MOCK_INVOICES);
+            setInvoices([]);
         } finally {
             setLoading(false);
         }

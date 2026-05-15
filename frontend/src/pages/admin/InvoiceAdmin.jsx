@@ -7,18 +7,6 @@ import KontrakService from '../../services/KontrakService';
 const rupiah = (n) => n != null ? 'Rp ' + Number(n).toLocaleString('id-ID') : 'Rp –';
 const tgl = (d) => d ? new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '–';
 
-const MOCK_KONTRAKS = [
-    { kontrakId: 'K-001', nomorKontrak: 'KTR-2024-001', namaClient: 'Budi Santoso',    status: 'ACTIVE' },
-    { kontrakId: 'K-002', nomorKontrak: 'KTR-2024-002', namaClient: 'Siti Rahayu',     status: 'ACTIVE' },
-    { kontrakId: 'K-003', nomorKontrak: 'KTR-2024-003', namaClient: 'Andi Wijaya',     status: 'ACTIVE' },
-];
-const MOCK_INVOICES = [
-    { invoiceId: 'INV-001', nomorInvoice: 'INV-2024-001', namaClient: 'Budi Santoso',    nomorKontrak: 'KTR-2024-001', tagihanMulai: '2024-01-01', tagihanAkhir: '2024-01-31', tanggalJatuhTempo: '2024-02-10', jumlahTagihan: 45000000, statusPembayaran: 'PAID',    buktiPembayaran: null },
-    { invoiceId: 'INV-002', nomorInvoice: 'INV-2024-002', namaClient: 'Budi Santoso',    nomorKontrak: 'KTR-2024-001', tagihanMulai: '2024-02-01', tagihanAkhir: '2024-02-29', tanggalJatuhTempo: '2024-03-10', jumlahTagihan: 45000000, statusPembayaran: 'PAID',    buktiPembayaran: null },
-    { invoiceId: 'INV-003', nomorInvoice: 'INV-2024-003', namaClient: 'Siti Rahayu',     nomorKontrak: 'KTR-2024-002', tagihanMulai: '2024-02-01', tagihanAkhir: '2024-02-29', tanggalJatuhTempo: '2024-03-10', jumlahTagihan: 28000000, statusPembayaran: 'UNPAID',  buktiPembayaran: 'has_file' },
-    { invoiceId: 'INV-004', nomorInvoice: 'INV-2024-004', namaClient: 'Andi Wijaya',     nomorKontrak: 'KTR-2024-003', tagihanMulai: '2024-03-01', tagihanAkhir: '2024-03-31', tanggalJatuhTempo: '2024-03-20', jumlahTagihan: 12000000, statusPembayaran: 'OVERDUE', buktiPembayaran: null },
-    { invoiceId: 'INV-005', nomorInvoice: 'INV-2024-005', namaClient: 'Dewi Lestari',    nomorKontrak: 'KTR-2024-004', tagihanMulai: '2024-04-01', tagihanAkhir: '2024-04-30', tanggalJatuhTempo: '2024-05-10', jumlahTagihan: 4500000,  statusPembayaran: 'UNPAID',  buktiPembayaran: null },
-];
 
 const StatusBadge = ({ status }) => {
     const map = { PAID: 'badge-paid', UNPAID: 'badge-unpaid', OVERDUE: 'badge-overdue' };
@@ -49,12 +37,12 @@ export default function InvoiceAdmin() {
                 invoiceService.getAllInvoice(),
                 KontrakService.getAllKontrak(),
             ]);
-            setInvoices(inv && inv.length > 0 ? inv : MOCK_INVOICES);
-            const aktif = (k && k.length > 0 ? k : MOCK_KONTRAKS).filter(x => x.status === 'ACTIVE');
+            setInvoices(Array.isArray(inv) ? inv : []);
+            const aktif = (Array.isArray(k) ? k : []).filter(x => x.status === 'ACTIVE');
             setKontraks(aktif);
         } catch {
-            setInvoices(MOCK_INVOICES);
-            setKontraks(MOCK_KONTRAKS);
+            setInvoices([]);
+            setKontraks([]);
         } finally {
             setLoading(false);
         }
@@ -62,12 +50,13 @@ export default function InvoiceAdmin() {
 
     const handleFilter = async s => {
         setFilter(s);
-        if (!s) { setInvoices(MOCK_INVOICES); return; }
-        setInvoices(MOCK_INVOICES.filter(i => i.statusPembayaran === s));
+        if (!s) { fetchAll(); return; }
         try {
             const data = await invoiceService.getInvoiceByStatus(s);
-            if (data && data.length > 0) setInvoices(data);
-        } catch { }
+            setInvoices(Array.isArray(data) ? data : []);
+        } catch {
+            setInvoices([]);
+        }
     };
 
     const handleCreate = async e => {

@@ -21,7 +21,6 @@ import ClientDashboard from './pages/client/Dashboard';
 import Katalog from './pages/client/Katalog';
 import KontrakClient from './pages/client/KontrakClient';
 import RiwayatTransaksi from './pages/client/RiwayatTransaksi';
-import Monitoring from './pages/client/Monitoring';
 
 // ─────────────────────────────────────────────
 // ProtectedRoute — OOP-aware role guard
@@ -98,9 +97,6 @@ function AppRoutes() {
       } />
       <Route path="/client/transaksi" element={
         <ProtectedRoute role="CLIENT"><RiwayatTransaksi /></ProtectedRoute>
-      } />
-      <Route path="/client/monitoring" element={
-        <ProtectedRoute role="CLIENT"><Monitoring /></ProtectedRoute>
       } />
 
       {/* Fallback */}

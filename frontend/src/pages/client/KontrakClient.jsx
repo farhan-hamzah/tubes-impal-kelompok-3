@@ -3,10 +3,6 @@ import { MainLayout } from '../../components/layout/Layout';
 import { useAuth } from '../../context/AuthContext';
 import KontrakService from '../../services/KontrakService';
 
-const MOCK_KONTRAKS = [
-    { kontrakId: 'K-001', nomorKontrak: 'KTR-2024-001', namaPaket: 'H100 Research Node', status: 'ACTIVE', tanggalMulai: '2024-01-01', tanggalBerakhir: '2024-12-31', durasibulan: 12, totalBiaya: 540000000, catatan: 'Cluster untuk penelitian model bahasa besar.' },
-    { kontrakId: 'K-002', nomorKontrak: 'KTR-2024-002', namaPaket: 'RTX Pro Studio', status: 'EXPIRING_SOON', tanggalMulai: '2024-03-01', tanggalBerakhir: '2024-06-30', durasibulan: 4, totalBiaya: 48000000, catatan: '' },
-];
 
 
 const StatusBadge = ({ status }) => {
@@ -33,12 +29,12 @@ export default function KontrakClient() {
     const loadKontraks = async () => {
         setLoading(true);
         try {
-            const data = user?.clientId && user.clientId !== 'CLIENT-001'
+            const data = user?.clientId
                 ? await KontrakService.getKontrakByClient(user.clientId)
-                : null;
-            setKontraks(data && data.length > 0 ? data : MOCK_KONTRAKS);
+                : [];
+            setKontraks(Array.isArray(data) ? data : []);
         } catch {
-            setKontraks(MOCK_KONTRAKS);
+            setKontraks([]);
         } finally {
             setLoading(false);
         }
