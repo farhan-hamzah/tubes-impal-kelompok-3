@@ -23,17 +23,6 @@ const KpiCard = ({ label, value, delta, icon, accent }) => (
     </div>
 );
 
-const ResourceBar = ({ label, value, color }) => (
-    <div className="space-y-2">
-        <div className="flex justify-between text-xs font-bold uppercase tracking-wider">
-            <span style={{ color: '#c2c6d8' }}>{label}</span>
-            <span style={{ color: color }}>{value}%</span>
-        </div>
-        <div className="progress-bar">
-            <div className="progress-fill" style={{ width: `${value}%`, background: color }} />
-        </div>
-    </div>
-);
 
 // ── Main Component ───────────────────────────────────────
 export default function AdminDashboard() {
@@ -106,109 +95,15 @@ export default function AdminDashboard() {
                         </div>
                         <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#4cd6ff' }}>GPU Units Available</p>
                         <div className="flex items-baseline gap-2">
-                            <h3 className="font-display text-3xl font-bold" style={{ color: '#dae2fd' }}>15/100</h3>
-                            <span className="text-xs" style={{ color: '#ffb59d' }}>High Demand</span>
+                            <h3 className="font-display text-3xl font-bold" style={{ color: '#dae2fd' }}>–</h3>
                         </div>
                         <div className="progress-bar mt-4">
-                            <div className="progress-fill" style={{ width: '85%' }} />
+                            <div className="progress-fill" style={{ width: '0%' }} />
                         </div>
                     </div>
                 </div>
 
-                {/* Charts */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Revenue Chart */}
-                    <div className="lg:col-span-2 card p-6">
-                        <div className="flex items-center justify-between mb-6">
-                            <div>
-                                <h4 className="font-display text-lg font-bold" style={{ color: '#dae2fd' }}>Revenue Performance</h4>
-                                <p className="text-xs mt-1" style={{ color: '#8c90a1' }}>Total revenue accrued over the last 30 days</p>
-                            </div>
-                            <select className="select" style={{ width: 'auto', padding: '0.4rem 2rem 0.4rem 0.75rem', fontSize: '0.75rem' }}>
-                                <option>Last 30 Days</option>
-                                <option>Last 90 Days</option>
-                            </select>
-                        </div>
-                        <div className="h-52 flex items-end gap-2 px-2">
-                            {[['WK1', 40], ['WK2', 55], ['WK3', 78], ['WK4', 65], ['WK5', 90], ['WK6', 72], ['WK7', 88]].map(([label, h]) => (
-                                <div key={label} className="flex-1 flex flex-col items-center gap-2 group">
-                                    <div className="w-full rounded-t-md transition-all duration-300"
-                                        style={{ height: `${h}%`, background: 'rgba(76,214,255,0.2)' }}
-                                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(76,214,255,0.6)'}
-                                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(76,214,255,0.2)'} />
-                                    <span className="text-[10px]" style={{ color: '#8c90a1' }}>{label}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* GPU Donut */}
-                    <div className="card p-6 flex flex-col items-center justify-center text-center">
-                        <h4 className="font-display text-lg font-bold mb-1" style={{ color: '#dae2fd' }}>GPU Fleet Status</h4>
-                        <p className="text-xs mb-6" style={{ color: '#8c90a1' }}>Real-time resource allocation</p>
-                        <div className="relative w-40 h-40 mb-6">
-                            <svg className="w-full h-full -rotate-90" viewBox="0 0 160 160">
-                                <circle cx="80" cy="80" r="64" fill="transparent" stroke="#222a3d" strokeWidth="12" />
-                                <circle cx="80" cy="80" r="64" fill="transparent" stroke="#4cd6ff" strokeWidth="12"
-                                    strokeDasharray="402" strokeDashoffset="60" strokeLinecap="round" />
-                            </svg>
-                            <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                <span className="font-display text-3xl font-black" style={{ color: '#dae2fd' }}>85%</span>
-                                <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#4cd6ff' }}>Active</span>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3 w-full">
-                            <div className="rounded-xl p-3 text-left" style={{ background: '#222a3d', borderLeft: '2px solid #4cd6ff' }}>
-                                <p className="text-[9px] uppercase font-bold" style={{ color: '#4a4f62' }}>Occupied</p>
-                                <p className="font-bold text-lg" style={{ color: '#dae2fd' }}>85 Units</p>
-                            </div>
-                            <div className="rounded-xl p-3 text-left" style={{ background: '#222a3d', borderLeft: '2px solid #424656' }}>
-                                <p className="text-[9px] uppercase font-bold" style={{ color: '#4a4f62' }}>Idle</p>
-                                <p className="font-bold text-lg" style={{ color: '#dae2fd' }}>15 Units</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Resource Usage + Activity */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="card p-6">
-                        <h4 className="font-display text-lg font-bold mb-6" style={{ color: '#dae2fd' }}>Physical Resource Utilization</h4>
-                        <div className="space-y-6">
-                            <ResourceBar label="Cluster CPU Load" value={64} color="#4cd6ff" />
-                            <ResourceBar label="Memory (RAM) Pool" value={42} color="#4cd6ff" />
-                            <ResourceBar label="Network Throughput" value={88} color="#cdbdff" />
-                        </div>
-                    </div>
-
-                    <div className="card p-6">
-                        <div className="flex items-center justify-between mb-6">
-                            <h4 className="font-display text-lg font-bold" style={{ color: '#dae2fd' }}>Deployment Stream</h4>
-                            <span className="material-symbols-outlined cursor-pointer" style={{ color: '#4a4f62' }}>more_vert</span>
-                        </div>
-                        <div className="space-y-4">
-                            {[
-                                { icon: 'cloud_done', color: '#4cd6ff', bg: 'rgba(76,214,255,0.1)', title: 'New Cluster Instance: A-100-Nodes-04', sub: 'Deployed to West-US-2 by admin', time: '2m ago' },
-                                { icon: 'warning', color: '#ffb59d', bg: 'rgba(255,181,157,0.1)', title: 'Resource Warning: High Memory', sub: 'Node-09 has reached 92% capacity', time: '14m ago' },
-                                { icon: 'person_add', color: '#cdbdff', bg: 'rgba(205,189,255,0.1)', title: 'New Client Onboarding', sub: 'DeepLearn AI provisioned 20 H100 units', time: '1h ago' },
-                            ].map(({ icon, color, bg, title, sub, time }, i) => (
-                                <div key={i} className={`flex gap-4 items-start ${i < 2 ? 'pb-4' : ''}`}
-                                    style={i < 2 ? { borderBottom: '1px solid rgba(66,70,86,0.15)' } : {}}>
-                                    <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                                        style={{ background: bg }}>
-                                        <span className="material-symbols-outlined text-lg" style={{ color }}>{icon}</span>
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium truncate" style={{ color: '#dae2fd' }}>{title}</p>
-                                        <p className="text-xs mt-0.5" style={{ color: '#8c90a1' }}>{sub}</p>
-                                    </div>
-                                    <span className="text-[10px] font-medium shrink-0" style={{ color: '#4a4f62' }}>{time}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </div>
+        </div>
         </MainLayout>
     );
 }

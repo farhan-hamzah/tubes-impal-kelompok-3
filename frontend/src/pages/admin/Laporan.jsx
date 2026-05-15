@@ -3,22 +3,9 @@ import { MainLayout } from '../../components/layout/Layout';
 import { invoiceService } from '../../services/InvoiceService';
 import kontrakService from '../../services/KontrakService';
 
-const mockRevenue = [
-    { month: 'Jan', value: 82 }, { month: 'Feb', value: 95 },
-    { month: 'Mar', value: 110 }, { month: 'Apr', value: 98 },
-    { month: 'Mei', value: 130 }, { month: 'Jun', value: 142 },
-];
 
-const mockClients = [
-    { name: 'DeepLearn AI', spend: 'Rp 28.4jt', pct: 72, badge: '#4cd6ff' },
-    { name: 'NeuroVision Labs', spend: 'Rp 19.2jt', pct: 55, badge: '#cdbdff' },
-    { name: 'AlphaForge Corp', spend: 'Rp 14.8jt', pct: 45, badge: '#4cd6ff' },
-    { name: 'Sigma Dynamics', spend: 'Rp 11.0jt', pct: 32, badge: '#8c90a1' },
-    { name: 'Quanta Systems', spend: 'Rp 8.6jt', pct: 24, badge: '#8c90a1' },
-];
 
 export default function Laporan() {
-    const max = Math.max(...mockRevenue.map(r => r.value));
     const [invoices, setInvoices] = useState([]);
     const [contracts, setContracts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -65,10 +52,10 @@ export default function Laporan() {
                 {/* KPI Cards */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     {[
-                        { label: 'Revenue (YTD)', value: 'Rp 657jt', delta: '+18.4%', icon: 'payments', color: '#4cd6ff' },
-                        { label: 'Kontrak Aktif', value: '856', delta: '+12.1%', icon: 'description', color: '#cdbdff' },
-                        { label: 'Utilisasi GPU', value: '88.4%', delta: '+5.2%', icon: 'memory', color: '#4cd6ff' },
-                        { label: 'Churn Rate', value: '2.1%', delta: '−0.3%', icon: 'trending_down', color: '#4cd6ff' },
+                        { label: 'Revenue (YTD)', value: '–', delta: null, icon: 'payments', color: '#4cd6ff' },
+                        { label: 'Kontrak Aktif', value: contracts.length || '–', delta: null, icon: 'description', color: '#cdbdff' },
+                        { label: 'Utilisasi GPU', value: '–', delta: null, icon: 'memory', color: '#4cd6ff' },
+                        { label: 'Churn Rate', value: '–', delta: null, icon: 'trending_down', color: '#4cd6ff' },
                     ].map(({ label, value, delta, icon, color }) => (
                         <div key={label} className="kpi-card">
                             <div className="absolute top-4 right-4 opacity-10">
@@ -76,7 +63,7 @@ export default function Laporan() {
                             </div>
                             <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#8c90a1' }}>{label}</p>
                             <p className="font-display text-3xl font-bold" style={{ color: '#dae2fd' }}>{value}</p>
-                            <p className="text-xs mt-2 font-semibold" style={{ color }}>{delta} vs bulan lalu</p>
+                            {delta && <p className="text-xs mt-2 font-semibold" style={{ color }}>{delta} vs bulan lalu</p>}
                         </div>
                     ))}
                 </div>
@@ -94,22 +81,8 @@ export default function Laporan() {
                                 <span className="material-symbols-outlined text-[16px]">download</span> Ekspor
                             </button>
                         </div>
-                        <div className="h-52 flex items-end gap-3 pb-2">
-                            {mockRevenue.map(({ month, value }) => (
-                                <div key={month} className="flex-1 flex flex-col items-center gap-2">
-                                    <span className="text-[10px] font-bold" style={{ color: '#4cd6ff' }}>
-                                        {value}
-                                    </span>
-                                    <div className="w-full rounded-t-lg transition-all"
-                                        style={{
-                                            height: `${(value / max) * 100}%`,
-                                            background: value === max
-                                                ? 'linear-gradient(180deg, #4cd6ff, #007c98)'
-                                                : 'rgba(76,214,255,0.2)'
-                                        }} />
-                                    <span className="text-[10px]" style={{ color: '#8c90a1' }}>{month}</span>
-                                </div>
-                            ))}
+                        <div className="h-52 flex items-center justify-center">
+                            <p className="text-sm" style={{ color: '#4a4f62' }}>Belum ada data pendapatan.</p>
                         </div>
                     </div>
 
@@ -153,21 +126,8 @@ export default function Laporan() {
                             <h4 className="font-display text-lg font-bold" style={{ color: '#dae2fd' }}>Top 5 Klien</h4>
                             <span className="text-xs" style={{ color: '#4a4f62' }}>Berdasarkan pengeluaran</span>
                         </div>
-                        <div className="space-y-5">
-                            {mockClients.map(({ name, spend, pct, badge }, i) => (
-                                <div key={name}>
-                                    <div className="flex justify-between items-center mb-1.5">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs font-bold" style={{ color: '#4a4f62' }}>{i + 1}.</span>
-                                            <span className="text-sm font-bold" style={{ color: '#dae2fd' }}>{name}</span>
-                                        </div>
-                                        <span className="text-xs font-bold" style={{ color: badge }}>{spend}</span>
-                                    </div>
-                                    <div className="progress-bar">
-                                        <div className="progress-fill" style={{ width: `${pct}%`, background: badge }} />
-                                    </div>
-                                </div>
-                            ))}
+                        <div className="flex items-center justify-center h-32">
+                            <p className="text-sm" style={{ color: '#4a4f62' }}>Belum ada data klien.</p>
                         </div>
                     </div>
 
