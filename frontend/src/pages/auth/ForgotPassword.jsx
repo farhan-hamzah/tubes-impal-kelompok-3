@@ -1,25 +1,41 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../../services/AuthService';
 
 export default function ForgotPassword() {
     const [email, setEmail] = useState('');
+    const [resetToken, setResetToken] = useState('');
     const [sent, setSent] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [copied, setCopied] = useState(false);
+    const navigate = useNavigate();
 
     const handleSubmit = async e => {
         e.preventDefault();
         setLoading(true);
         setError('');
         try {
-            await authService.forgotPassword(email);
+            const res = await authService.forgotPassword(email);
+            // Ambil token dari response
+            const token = res?.resetToken || res?.data?.resetToken || res;
+            setResetToken(token);
             setSent(true);
         } catch (err) {
-            setError(err.message || 'Gagal mengirim email. Coba lagi.');
+            setError(err.message || 'Gagal membuat token. Coba lagi.');
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(resetToken);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    const handleLanjut = () => {
+        navigate('/reset-password', { state: { token: resetToken, email } });
     };
 
     return (
@@ -42,13 +58,12 @@ export default function ForgotPassword() {
                             </div>
                             <h2 className="font-display font-bold text-2xl text-center mb-2" style={{ color: '#dae2fd' }}>Reset Password</h2>
                             <p className="text-sm text-center mb-8" style={{ color: '#8c90a1' }}>
-                                Masukkan email Anda dan kami akan mengirimkan link untuk reset password.
+                                Masukkan email Anda untuk mendapatkan token reset password.
                             </p>
                             {error && (
                                 <div className="mb-4 p-3 rounded-xl flex items-start gap-3 fade-in"
                                     style={{ background: 'rgba(147,0,10,0.2)', borderLeft: '3px solid #ffb4ab' }}>
-                                    <span className="material-symbols-outlined text-lg shrink-0"
-                                        style={{ color: '#ffb4ab' }}>report</span>
+                                    <span className="material-symbols-outlined text-lg shrink-0" style={{ color: '#ffb4ab' }}>report</span>
                                     <p className="text-sm" style={{ color: '#ffb4ab' }}>{error}</p>
                                 </div>
                             )}
@@ -63,21 +78,44 @@ export default function ForgotPassword() {
                                 </div>
                                 <button type="submit" disabled={loading} className="btn-primary w-full">
                                     {loading
-                                        ? <><span className="material-symbols-outlined spin">progress_activity</span> Mengirim...</>
-                                        : <><span className="material-symbols-outlined">send</span> Kirim Link Reset</>}
+                                        ? <><span className="material-symbols-outlined spin">progress_activity</span> Memproses...</>
+                                        : <><span className="material-symbols-outlined">key</span> Dapatkan Token Reset</>}
                                 </button>
                             </form>
                         </>
                     ) : (
-                        <div className="text-center py-4 fade-in">
+                        <div className="fade-in">
                             <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6"
                                 style={{ background: 'rgba(76,214,255,0.1)', border: '1px solid rgba(76,214,255,0.3)' }}>
-                                <span className="material-symbols-outlined text-3xl" style={{ color: '#4cd6ff' }}>mark_email_read</span>
+                                <span className="material-symbols-outlined text-3xl" style={{ color: '#4cd6ff' }}>key</span>
                             </div>
-                            <h2 className="font-display font-bold text-xl mb-2" style={{ color: '#dae2fd' }}>Email Terkirim!</h2>
-                            <p className="text-sm mb-6" style={{ color: '#8c90a1' }}>
-                                Link reset password telah dikirim ke <strong style={{ color: '#4cd6ff' }}>{email}</strong>.
+                            <h2 className="font-display font-bold text-xl text-center mb-2" style={{ color: '#dae2fd' }}>Token Berhasil Dibuat!</h2>
+                            <p className="text-sm text-center mb-4" style={{ color: '#8c90a1' }}>
+                                Gunakan token di bawah ini untuk reset password. Token berlaku <strong style={{ color: '#ffb347' }}>15 menit</strong>.
                             </p>
+
+                            {/* Token display */}
+                            <div className="rounded-xl p-3 mb-4 flex items-center gap-2"
+                                style={{ background: 'rgba(76,214,255,0.05)', border: '1px solid rgba(76,214,255,0.2)' }}>
+                                <p className="text-xs font-mono flex-1 break-all" style={{ color: '#4cd6ff' }}>
+                                    {resetToken}
+                                </p>
+                                <button onClick={handleCopy} className="shrink-0 p-1 rounded-lg hover:bg-white/10 transition"
+                                    title="Copy token">
+                                    <span className="material-symbols-outlined text-lg" style={{ color: copied ? '#4ade80' : '#4cd6ff' }}>
+                                        {copied ? 'check' : 'content_copy'}
+                                    </span>
+                                </button>
+                            </div>
+
+                            <p className="text-xs text-center mb-6" style={{ color: '#8c90a1' }}>
+                                Salin token di atas, lalu klik tombol di bawah untuk reset password.
+                            </p>
+
+                            <button onClick={handleLanjut} className="btn-primary w-full mb-3">
+                                <span className="material-symbols-outlined">arrow_forward</span>
+                                Lanjut Reset Password
+                            </button>
                         </div>
                     )}
                     <Link to="/login" className="flex items-center justify-center gap-2 text-sm mt-4 hover:underline"
