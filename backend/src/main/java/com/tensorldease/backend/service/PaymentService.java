@@ -30,16 +30,16 @@ public class PaymentService {
             throw new RuntimeException("Invoice sudah dibayar!");
         }
 
-        // Build Midtrans request body
         Map<String, Object> params = new HashMap<>();
 
-        // Transaction details — order_id harus unik, pakai nomorInvoice
+        // Tambahkan timestamp agar order_id selalu unik di Midtrans
+        String orderId = invoice.getNomorInvoice() + "-" + System.currentTimeMillis();
+
         Map<String, Object> transactionDetails = new HashMap<>();
-        transactionDetails.put("order_id", invoice.getNomorInvoice());
+        transactionDetails.put("order_id", orderId);
         transactionDetails.put("gross_amount", invoice.getJumlahTagihan().longValue());
         params.put("transaction_details", transactionDetails);
 
-        // Customer details
         Map<String, String> customerDetails = new HashMap<>();
         customerDetails.put("first_name", invoice.getClient().getUser().getNama());
         customerDetails.put("email", invoice.getClient().getUser().getEmail());

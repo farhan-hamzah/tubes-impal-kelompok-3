@@ -16,7 +16,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/payment")
-// CORS ditangani global di SecurityConfig — tidak perlu @CrossOrigin di sini
 public class PaymentController {
 
     @Autowired
@@ -28,8 +27,6 @@ public class PaymentController {
     @Value("${midtrans.server-key}")
     private String serverKey;
 
-    // FIX: invoiceId sekarang dari @PathVariable, sesuai dengan panggilan frontend
-    // Frontend memanggil: POST /api/payment/snap-token/{invoiceId}
     @PostMapping("/snap-token/{invoiceId}")
     public ResponseEntity<?> getSnapToken(@PathVariable String invoiceId) {
         try {
@@ -42,30 +39,33 @@ public class PaymentController {
         }
     }
 
-    // Webhook callback dari Midtrans (notifikasi setelah bayar)
     @PostMapping("/notification")
     public ResponseEntity<String> handleNotification(@RequestBody Map<String, Object> payload) {
         try {
-            String orderId          = (String) payload.get("order_id");
-            String statusCode       = (String) payload.get("status_code");
-            String grossAmount      = (String) payload.get("gross_amount");
-            String signatureKey     = (String) payload.get("signature_key");
+            String orderId           = (String) payload.get("order_id");
+            String statusCode        = (String) payload.get("status_code");
+            String grossAmount       = (String) payload.get("gross_amount");
+            String signatureKey      = (String) payload.get("signature_key");
             String transactionStatus = (String) payload.get("transaction_status");
-            String fraudStatus      = (String) payload.get("fraud_status");
+            String fraudStatus       = (String) payload.get("fraud_status");
 
-            // Verifikasi signature untuk keamanan
+            // Verifikasi signature Midtrans
             String rawSignature      = orderId + statusCode + grossAmount + serverKey;
             String expectedSignature = sha512(rawSignature);
             if (!expectedSignature.equals(signatureKey)) {
                 return ResponseEntity.status(403).body("Invalid signature");
             }
 
-            // Update invoice jika pembayaran sukses
             boolean isSuccess = ("capture".equals(transactionStatus) && "accept".equals(fraudStatus))
                 || "settlement".equals(transactionStatus);
 
             if (isSuccess) {
-                invoiceRepository.findByNomorInvoice(orderId).ifPresent(invoice -> {
+                // order_id format: "INV-2026-XXXX-timestamp" — ambil nomorInvoice tanpa suffix timestamp
+                String nomorInvoice = orderId.contains("-")
+                    ? orderId.substring(0, orderId.lastIndexOf("-"))
+                    : orderId;
+
+                invoiceRepository.findByNomorInvoice(nomorInvoice).ifPresent(invoice -> {
                     invoice.setStatusPembayaran("PAID");
                     invoice.setTanggalPembayaran(LocalDate.now());
                     invoiceRepository.save(invoice);
@@ -78,7 +78,6 @@ public class PaymentController {
         }
     }
 
-    // Helper SHA-512 untuk verifikasi signature Midtrans
     private String sha512(String input) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-512");
