@@ -5,7 +5,10 @@ class PaketService extends BaseService {
 
     // Public / Client
     async getAllPaket()          { return this.get('/paket'); }
+<<<<<<< HEAD
     async getPaketById(id)       { return this.get(`/paket/${id}`); }
+=======
+>>>>>>> farhan
 
     // Admin only
     async createPaket(data)      { return this.post('/admin/paket', data); }
@@ -13,4 +16,8 @@ class PaketService extends BaseService {
     async deletePaket(id)        { return this.delete(`/admin/paket/${id}`); }
 }
 
+<<<<<<< HEAD
 export default new PaketService();
+=======
+export default new PaketService();
+>>>>>>> farhan

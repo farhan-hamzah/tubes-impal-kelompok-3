@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import com.tensorldease.backend.repository.AdminRepository;
 import com.tensorldease.backend.model.Admin;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserService {
@@ -128,6 +129,7 @@ public class UserService {
     }
 
     // FR-06: Logout
+    @Transactional
     public void logout(String token) {
         sessionTokenRepository.findByToken(token)
             .ifPresent(sessionTokenRepository::delete);
