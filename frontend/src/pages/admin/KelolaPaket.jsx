@@ -2,17 +2,6 @@ import { useState, useEffect } from 'react';
 import { MainLayout } from '../../components/layout/Layout';
 import PaketService from '../../services/PaketService';
 
-<<<<<<< HEAD
-
-=======
-const MOCK_PAKETS = [
-    { paketId: 'PKT-001', namaPaket: 'H100 Research Node',      spesifikasiGpu: '8× NVIDIA H100 80GB SXM5', jumlahCpuCore: 128, kapasitasRamGb: 1024, storage: '4TB NVMe RAID-0', jumlahUnit: 10, tarif: 45000000, status: 'AKTIF' },
-    { paketId: 'PKT-002', namaPaket: 'A100 Enterprise Cluster', spesifikasiGpu: '4× NVIDIA A100 80GB PCIe', jumlahCpuCore: 64,  kapasitasRamGb: 512,  storage: '2TB NVMe SSD',    jumlahUnit: 15, tarif: 28000000, status: 'AKTIF' },
-    { paketId: 'PKT-003', namaPaket: 'RTX Pro Studio',          spesifikasiGpu: '8× NVIDIA RTX 4090 24GB',  jumlahCpuCore: 32,  kapasitasRamGb: 256,  storage: '1TB NVMe SSD',    jumlahUnit: 20, tarif: 12000000, status: 'AKTIF' },
-    { paketId: 'PKT-004', namaPaket: 'Starter GPU Node',        spesifikasiGpu: '2× NVIDIA RTX 3090 24GB', jumlahCpuCore: 16,  kapasitasRamGb: 128,  storage: '500GB NVMe SSD',  jumlahUnit: 30, tarif:  4500000, status: 'AKTIF' },
-    { paketId: 'PKT-005', namaPaket: 'V100 Legacy Compute',     spesifikasiGpu: '4× NVIDIA Tesla V100 32GB',jumlahCpuCore: 48,  kapasitasRamGb: 384,  storage: '2TB SATA SSD',    jumlahUnit:  0, tarif:  9000000, status: 'TIDAK AKTIF' },
-];
->>>>>>> farhan
 
 export default function KelolaPaket() {
     const [pakets, setPakets] = useState([]);
@@ -28,15 +17,9 @@ export default function KelolaPaket() {
         setLoading(true);
         try {
             const data = await PaketService.getAllPaket();
-<<<<<<< HEAD
             setPakets(Array.isArray(data) ? data : []);
         } catch {
             setPakets([]);
-=======
-            setPakets(data && data.length > 0 ? data : MOCK_PAKETS);
-        } catch {
-            setPakets(MOCK_PAKETS);
->>>>>>> farhan
         } finally {
             setLoading(false);
         }
@@ -99,15 +82,9 @@ export default function KelolaPaket() {
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     {[
                         { label: 'Total Paket', value: pakets.length, icon: 'inventory_2' },
-<<<<<<< HEAD
                         { label: 'Instansi Aktif', value: '–', icon: 'bolt', delta: null },
                         { label: 'Utilisasi Rata-rata', value: '–', icon: 'analytics' },
                         { label: 'Proyeksi Pendapatan', value: '–', icon: 'payments' },
-=======
-                        { label: 'Instansi Aktif', value: '1,842', icon: 'bolt', delta: '+12%' },
-                        { label: 'Utilisasi Rata-rata', value: '88.4%', icon: 'analytics' },
-                        { label: 'Proyeksi Pendapatan', value: 'Rp 142rb', icon: 'payments' },
->>>>>>> farhan
                     ].map(({ label, value, icon, delta }) => (
                         <div key={label} className="kpi-card">
                             <div className="absolute top-4 right-4 opacity-10">

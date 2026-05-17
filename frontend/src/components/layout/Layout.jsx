@@ -23,10 +23,6 @@ export class SidebarConfig {
             { name: 'Katalog',      path: '/client/katalog',     icon: 'grid_view' },
             { name: 'Kontrak',      path: '/client/kontrak',     icon: 'description' },
             { name: 'Tagihan',      path: '/client/transaksi',   icon: 'payments' },
-<<<<<<< HEAD
-=======
-            { name: 'Monitoring',   path: '/client/monitoring',  icon: 'monitoring' },
->>>>>>> farhan
         ];
     }
 }

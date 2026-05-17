@@ -2,16 +2,6 @@ import { useState, useEffect } from 'react';
 import { MainLayout } from '../../components/layout/Layout';
 import UserService from '../../services/UserService';
 
-<<<<<<< HEAD
-=======
-const MOCK_CLIENTS = [
-    { userId: 'U-001', nama: 'Budi Santoso',    email: 'budi@tensorlab.ai',   nomorTelepon: '081234567890', isActive: true },
-    { userId: 'U-002', nama: 'Siti Rahayu',     email: 'siti@deeplearn.id',   nomorTelepon: '082345678901', isActive: true },
-    { userId: 'U-003', nama: 'Andi Wijaya',     email: 'andi@aiventure.co',   nomorTelepon: '083456789012', isActive: true },
-    { userId: 'U-004', nama: 'Dewi Lestari',    email: 'dewi@cloudgpu.io',    nomorTelepon: '084567890123', isActive: false },
-    { userId: 'U-005', nama: 'Reza Firmansyah', email: 'reza@hpcworld.net',   nomorTelepon: '085678901234', isActive: true },
-];
->>>>>>> farhan
 
 export default function ClientList() {
     const [clients, setClients] = useState([]);
@@ -24,15 +14,9 @@ export default function ClientList() {
         setLoading(true);
         try {
             const data = await UserService.getAllClients();
-<<<<<<< HEAD
             setClients(Array.isArray(data) ? data : []);
         } catch {
             setClients([]);
-=======
-            setClients(data && data.length > 0 ? data : MOCK_CLIENTS);
-        } catch {
-            setClients(MOCK_CLIENTS);
->>>>>>> farhan
         } finally {
             setLoading(false);
         }
@@ -64,24 +48,14 @@ export default function ClientList() {
                 {/* Snapshot KPIs */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {[
-<<<<<<< HEAD
                         { icon: 'monitoring', label: 'Utilisasi Global', value: '–', badge: null, badgeColor: '#4cd6ff', sub: null },
                         { icon: 'account_balance', label: 'Proyeksi ARR', value: '–', badge: null, badgeColor: '#4cd6ff', sub: null },
                         { icon: 'security', label: 'Insiden Terbuka', value: '–', badge: null, badgeColor: '#ffb59d', sub: null },
-=======
-                        { icon: 'monitoring', label: 'Utilisasi Global', value: '88.2%', badge: '+12%', badgeColor: '#4cd6ff', sub: null },
-                        { icon: 'account_balance', label: 'Proyeksi ARR', value: 'Rp 1,8 M', badge: 'Stabil', badgeColor: '#4cd6ff', sub: 'Siklus perpanjangan berikutnya dalam 14 hari.' },
-                        { icon: 'security', label: 'Insiden Terbuka', value: '02', badge: 'Peringatan', badgeColor: '#ffb59d', sub: null },
->>>>>>> farhan
                     ].map(({ icon, label, value, badge, badgeColor, sub }) => (
                         <div key={label} className="kpi-card">
                             <div className="flex justify-between items-start mb-4">
                                 <span className="material-symbols-outlined" style={{ color: '#4cd6ff' }}>{icon}</span>
-<<<<<<< HEAD
                                 {badge && <span className="badge" style={{ background: `${badgeColor}18`, color: badgeColor }}>{badge}</span>}
-=======
-                                <span className="badge" style={{ background: `${badgeColor}18`, color: badgeColor }}>{badge}</span>
->>>>>>> farhan
                             </div>
                             <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: '#8c90a1' }}>{label}</p>
                             <p className="font-display text-4xl font-extrabold" style={{ color: '#dae2fd' }}>{value}</p>

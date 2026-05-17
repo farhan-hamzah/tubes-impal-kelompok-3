@@ -5,17 +5,6 @@ class UserService extends BaseService {
 
     // Admin — client management
     async getAllClients()              { return this.get('/admin/clients'); }
-<<<<<<< HEAD
-    async getClientById(id)           { return this.get(`/admin/clients/${id}`); }
-
-    // User profile
-    async getProfile(userId)          { return this.get(`/user/profile/${userId}`); }
-    async updateProfile(userId, data) { return this.put(`/user/update/${userId}`, data); }
-    async deleteAccount(userId)       { return this.delete(`/user/delete/${userId}`); }
-}
-
-export default new UserService();
-=======
 
     // User profile (FR-03)
     async getProfile(userId)          { return this.get(`/user/profile/${userId}`); }
@@ -33,4 +22,3 @@ export default new UserService();
 }
 
 export default new UserService();
->>>>>>> farhan

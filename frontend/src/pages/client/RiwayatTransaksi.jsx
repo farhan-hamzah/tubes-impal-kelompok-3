@@ -2,10 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { MainLayout } from '../../components/layout/Layout';
 import { useAuth } from '../../context/AuthContext';
 import { invoiceService } from '../../services/InvoiceService';
-<<<<<<< HEAD
-=======
 import { paymentService } from '../../services/PaymentService';
->>>>>>> farhan
 
 // ── Helpers ──────────────────────────────────────────────────────
 const rupiah = (n) =>
@@ -16,8 +13,6 @@ const tgl = (d) => {
     return new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 };
 
-<<<<<<< HEAD
-=======
 // ── Mock invoice data (demo / no backend) ────────────────────────
 const MOCK_INVOICES = [
     {
@@ -77,7 +72,6 @@ const MOCK_INVOICES = [
         metodePembayaran: null,
     },
 ];
->>>>>>> farhan
 
 const STATUS_CONFIG = {
     PAID:    { label: 'Lunas',        bg: 'rgba(76,214,255,0.12)',  color: '#4cd6ff',  icon: 'check_circle' },
@@ -85,22 +79,12 @@ const STATUS_CONFIG = {
     OVERDUE: { label: 'Jatuh Tempo',  bg: 'rgba(255,180,171,0.12)', color: '#ffb4ab', icon: 'warning' },
 };
 
-<<<<<<< HEAD
-const METODE_OPTIONS = [
-=======
 // Metode khusus untuk transfer manual saja
 const TRANSFER_OPTIONS = [
->>>>>>> farhan
     'Transfer Bank BCA',
     'Transfer Bank Mandiri',
     'Transfer Bank BRI',
     'Transfer Bank BNI',
-<<<<<<< HEAD
-    'Virtual Account',
-    'QRIS / GoPay / OVO',
-    'Kartu Kredit',
-];
-=======
 ];
 
 // ── Load Midtrans Snap script sekali ──────────────────────────────
@@ -113,7 +97,6 @@ const loadSnapScript = () => {
     script.setAttribute('data-client-key', import.meta.env.VITE_MIDTRANS_CLIENT_KEY || '');
     document.head.appendChild(script);
 };
->>>>>>> farhan
 
 export default function RiwayatTransaksi() {
     const { user } = useAuth();
@@ -121,29 +104,6 @@ export default function RiwayatTransaksi() {
 
     const [invoices, setInvoices]     = useState([]);
     const [loading, setLoading]       = useState(true);
-<<<<<<< HEAD
-    const [selected, setSelected]     = useState(null);   // invoice detail modal
-    const [payModal, setPayModal]     = useState(null);   // payment form modal
-    const [filterStatus, setFilter]   = useState('ALL');
-
-    // Payment form state
-    const [buktiFile, setBuktiFile]   = useState(null);
-    const [metode, setMetode]         = useState(METODE_OPTIONS[0]);
-    const [submitting, setSubmitting] = useState(false);
-    const [doneId, setDoneId]         = useState(null);
-
-    useEffect(() => { load(); }, [user]);
-
-    const load = async () => {
-        setLoading(true);
-        try {
-            const data = user?.clientId
-                ? await invoiceService.getInvoiceByClient(user.clientId)
-                : [];
-            setInvoices(Array.isArray(data) ? data : []);
-        } catch {
-            setInvoices([]);
-=======
     const [selected, setSelected]     = useState(null);
     const [payModal, setPayModal]     = useState(null);
     const [filterStatus, setFilter]   = useState('ALL');
@@ -177,33 +137,11 @@ export default function RiwayatTransaksi() {
             setInvoices(data && data.length > 0 ? data : MOCK_INVOICES);
         } catch {
             setInvoices(MOCK_INVOICES);
->>>>>>> farhan
         } finally {
             setLoading(false);
         }
     };
 
-<<<<<<< HEAD
-    const filtered = filterStatus === 'ALL'
-        ? invoices
-        : invoices.filter(inv => inv.statusPembayaran === filterStatus);
-
-    const totalTagihan = invoices.reduce((s, i) => s + (i.jumlahTagihan || 0), 0);
-    const totalLunas   = invoices.filter(i => i.statusPembayaran === 'PAID').reduce((s, i) => s + (i.jumlahTagihan || 0), 0);
-    const totalBelum   = invoices.filter(i => i.statusPembayaran !== 'PAID').reduce((s, i) => s + (i.jumlahTagihan || 0), 0);
-
-    const handleFileChange = e => {
-        const f = e.target.files[0];
-        if (f) setBuktiFile(f);
-    };
-
-    const handlePay = async e => {
-        e.preventDefault();
-        if (!buktiFile) return alert('Pilih file bukti pembayaran.');
-        setSubmitting(true);
-        try {
-            if (user?.clientId !== 'CLIENT-001') {
-=======
     const openPayModal = (inv) => {
         setPayModal(inv);
         setBuktiFile(null);
@@ -227,54 +165,24 @@ export default function RiwayatTransaksi() {
         setSubmitting(true);
         try {
             if (user?.clientId && user.clientId !== 'CLIENT-001') {
->>>>>>> farhan
                 const reader = new FileReader();
                 reader.onloadend = async () => {
                     const base64 = reader.result.split(',')[1];
                     await invoiceService.uploadBuktiPembayaran(payModal.invoiceId, base64);
-<<<<<<< HEAD
-                    finalizePayment();
-=======
                     finalizeManual();
->>>>>>> farhan
                 };
                 reader.readAsDataURL(buktiFile);
             } else {
                 // Demo mode
                 await new Promise(r => setTimeout(r, 800));
-<<<<<<< HEAD
-                finalizePayment();
-            }
-        } catch (err) {
-            alert('Gagal mengupload: ' + err.message);
-        } finally {
-=======
                 finalizeManual();
             }
         } catch (err) {
             alert('Gagal mengupload: ' + err.message);
->>>>>>> farhan
             setSubmitting(false);
         }
     };
 
-<<<<<<< HEAD
-    const finalizePayment = () => {
-        setDoneId(payModal.invoiceId);
-        setInvoices(prev => prev.map(inv =>
-            inv.invoiceId === payModal.invoiceId
-                ? { ...inv, statusPembayaran: 'PAID', metodePembayaran: metode, tanggalBayar: new Date().toISOString().split('T')[0] }
-                : inv
-        ));
-        setPayModal(null);
-        setBuktiFile(null);
-    };
-
-    return (
-        <MainLayout pageTitle="Riwayat Transaksi">
-            <div className="space-y-8">
-
-=======
     const finalizeManual = () => {
         // Status tetap UNPAID — menunggu validasi admin
         setDoneMsg('Bukti pembayaran berhasil diunggah! Tim kami akan memverifikasi dalam 1×24 jam.');
@@ -329,7 +237,6 @@ export default function RiwayatTransaksi() {
         <MainLayout pageTitle="Riwayat Transaksi">
             <div className="space-y-8">
 
->>>>>>> farhan
                 {/* ── Header ── */}
                 <div>
                     <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#4cd6ff' }}>
@@ -339,32 +246,17 @@ export default function RiwayatTransaksi() {
                         Riwayat <span style={{ color: '#4cd6ff' }}>Transaksi</span>
                     </h1>
                     <p className="text-sm mt-2" style={{ color: '#8c90a1' }}>
-<<<<<<< HEAD
-                        Kelola invoice, unggah bukti pembayaran, dan pantau status tagihan layanan Anda.
-=======
                         Kelola invoice, pilih metode pembayaran, dan pantau status tagihan layanan Anda.
->>>>>>> farhan
                     </p>
                 </div>
 
                 {/* ── Success Banner ── */}
-<<<<<<< HEAD
-                {doneId && (
-                    <div className="p-4 rounded-xl flex items-center gap-3 fade-in"
-                        style={{ background: 'rgba(76,214,255,0.1)', border: '1px solid rgba(76,214,255,0.3)' }}>
-                        <span className="material-symbols-outlined" style={{ color: '#4cd6ff' }}>check_circle</span>
-                        <p className="text-sm font-medium" style={{ color: '#4cd6ff' }}>
-                            Bukti pembayaran berhasil diunggah! Tim kami akan memverifikasi dalam 1×24 jam.
-                        </p>
-                        <button onClick={() => setDoneId(null)} className="ml-auto" style={{ color: '#4a4f62' }}>
-=======
                 {doneMsg && (
                     <div className="p-4 rounded-xl flex items-center gap-3 fade-in"
                         style={{ background: 'rgba(76,214,255,0.1)', border: '1px solid rgba(76,214,255,0.3)' }}>
                         <span className="material-symbols-outlined" style={{ color: '#4cd6ff' }}>check_circle</span>
                         <p className="text-sm font-medium" style={{ color: '#4cd6ff' }}>{doneMsg}</p>
                         <button onClick={() => setDoneMsg('')} className="ml-auto" style={{ color: '#4a4f62' }}>
->>>>>>> farhan
                             <span className="material-symbols-outlined text-sm">close</span>
                         </button>
                     </div>
@@ -373,15 +265,9 @@ export default function RiwayatTransaksi() {
                 {/* ── KPI Summary ── */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {[
-<<<<<<< HEAD
-                        { label: 'Total Tagihan', value: rupiah(totalTagihan), color: '#dae2fd', icon: 'receipt_long', bg: 'rgba(218,226,253,0.06)' },
-                        { label: 'Sudah Lunas', value: rupiah(totalLunas),   color: '#4cd6ff',  icon: 'check_circle', bg: 'rgba(76,214,255,0.08)' },
-                        { label: 'Belum Dibayar', value: rupiah(totalBelum), color: '#ffb4ab',  icon: 'error',        bg: 'rgba(255,180,171,0.08)' },
-=======
                         { label: 'Total Tagihan',  value: rupiah(totalTagihan), color: '#dae2fd', icon: 'receipt_long', bg: 'rgba(218,226,253,0.06)' },
                         { label: 'Sudah Lunas',    value: rupiah(totalLunas),   color: '#4cd6ff',  icon: 'check_circle', bg: 'rgba(76,214,255,0.08)' },
                         { label: 'Belum Dibayar',  value: rupiah(totalBelum),   color: '#ffb4ab',  icon: 'error',        bg: 'rgba(255,180,171,0.08)' },
->>>>>>> farhan
                     ].map(({ label, value, color, icon, bg }) => (
                         <div key={label} className="kpi-card flex items-center gap-4">
                             <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
@@ -478,15 +364,9 @@ export default function RiwayatTransaksi() {
                                                         Detail
                                                     </button>
                                                     {needsPay && (
-<<<<<<< HEAD
-                                                        <button onClick={() => { setPayModal(inv); setBuktiFile(null); setMetode(METODE_OPTIONS[0]); }}
-                                                            className="btn-primary text-xs py-1.5 px-3">
-                                                            <span className="material-symbols-outlined text-[15px]">upload</span>
-=======
                                                         <button onClick={() => openPayModal(inv)}
                                                             className="btn-primary text-xs py-1.5 px-3">
                                                             <span className="material-symbols-outlined text-[15px]">payment</span>
->>>>>>> farhan
                                                             Bayar
                                                         </button>
                                                     )}
@@ -516,10 +396,6 @@ export default function RiwayatTransaksi() {
                             </button>
                         </div>
                         <div className="p-6 space-y-5">
-<<<<<<< HEAD
-                            {/* Status Banner */}
-=======
->>>>>>> farhan
                             {(() => {
                                 const sc = STATUS_CONFIG[selected.statusPembayaran] || STATUS_CONFIG.UNPAID;
                                 return (
@@ -535,11 +411,6 @@ export default function RiwayatTransaksi() {
                                     </div>
                                 );
                             })()}
-<<<<<<< HEAD
-
-                            {/* Info Grid */}
-=======
->>>>>>> farhan
                             <div className="rounded-xl p-4 space-y-3" style={{ background: '#131b2e' }}>
                                 {[
                                     ['No. Kontrak', selected.nomorKontrak],
@@ -565,17 +436,10 @@ export default function RiwayatTransaksi() {
                         <div className="flex justify-end gap-3 px-6 py-4"
                             style={{ borderTop: '1px solid rgba(66,70,86,0.2)' }}>
                             {(selected.statusPembayaran === 'UNPAID' || selected.statusPembayaran === 'OVERDUE') && (
-<<<<<<< HEAD
-                                <button onClick={() => { setPayModal(selected); setSelected(null); setBuktiFile(null); }}
-                                    className="btn-primary">
-                                    <span className="material-symbols-outlined text-[18px]">upload</span>
-                                    Upload Bukti Bayar
-=======
                                 <button onClick={() => { openPayModal(selected); setSelected(null); }}
                                     className="btn-primary">
                                     <span className="material-symbols-outlined text-[18px]">payment</span>
                                     Bayar Sekarang
->>>>>>> farhan
                                 </button>
                             )}
                             <button onClick={() => setSelected(null)} className="btn-secondary">Tutup</button>
@@ -584,17 +448,6 @@ export default function RiwayatTransaksi() {
                 </div>
             )}
 
-<<<<<<< HEAD
-            {/* ══ MODAL: Upload Pembayaran ══ */}
-            {payModal && (
-                <div className="modal-overlay">
-                    <div className="modal-box max-w-md">
-                        <div className="flex justify-between items-center px-6 py-4"
-                            style={{ borderBottom: '1px solid rgba(66,70,86,0.2)' }}>
-                            <div>
-                                <h3 className="font-display font-bold text-lg" style={{ color: '#dae2fd' }}>Upload Bukti Pembayaran</h3>
-                                <p className="text-xs mt-0.5" style={{ color: '#4cd6ff' }}>{payModal.nomorInvoice}</p>
-=======
             {/* ══ MODAL: Pilih Metode Pembayaran ══ */}
             {payModal && (
                 <div className="modal-overlay">
@@ -605,18 +458,13 @@ export default function RiwayatTransaksi() {
                             <div>
                                 <h3 className="font-display font-bold text-lg" style={{ color: '#dae2fd' }}>Pembayaran Invoice</h3>
                                 <p className="text-xs mt-0.5 font-mono" style={{ color: '#4cd6ff' }}>{payModal.nomorInvoice}</p>
->>>>>>> farhan
                             </div>
                             <button onClick={() => setPayModal(null)} style={{ color: '#4a4f62' }}>
                                 <span className="material-symbols-outlined">close</span>
                             </button>
                         </div>
 
-<<<<<<< HEAD
-                        <form id="payForm" onSubmit={handlePay} className="p-6 space-y-5">
-=======
                         <div className="p-6 space-y-5">
->>>>>>> farhan
                             {/* Invoice Summary */}
                             <div className="rounded-xl p-4 flex justify-between items-center"
                                 style={{ background: '#131b2e' }}>
@@ -635,87 +483,6 @@ export default function RiwayatTransaksi() {
                                 </div>
                             </div>
 
-<<<<<<< HEAD
-                            {/* Metode Pembayaran */}
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8c90a1' }}>
-                                    Metode Pembayaran
-                                </label>
-                                <div className="relative">
-                                    <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px]"
-                                        style={{ color: '#4a4f62' }}>account_balance</span>
-                                    <select value={metode} onChange={e => setMetode(e.target.value)}
-                                        className="input input-icon appearance-none pr-10"
-                                        style={{ colorScheme: 'dark' }}>
-                                        {METODE_OPTIONS.map(m => <option key={m} value={m}>{m}</option>)}
-                                    </select>
-                                    <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-[18px] pointer-events-none"
-                                        style={{ color: '#4a4f62' }}>expand_more</span>
-                                </div>
-                            </div>
-
-                            {/* Rekening Tujuan */}
-                            <div className="rounded-xl p-4 space-y-2" style={{ background: '#131b2e', border: '1px solid rgba(76,214,255,0.1)' }}>
-                                <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: '#4cd6ff' }}>
-                                    Info Rekening Tujuan
-                                </p>
-                                {[
-                                    ['Bank', 'PT TensorLease Indonesia'],
-                                    ['No. Rekening', '1234-5678-9012'],
-                                    ['Atas Nama', 'PT TensorLease Indonesia'],
-                                    ['Berita', payModal.nomorInvoice],
-                                ].map(([k, v]) => (
-                                    <div key={k} className="flex justify-between text-xs">
-                                        <span style={{ color: '#8c90a1' }}>{k}</span>
-                                        <span className="font-bold font-mono" style={{ color: '#dae2fd' }}>{v}</span>
-                                    </div>
-                                ))}
-                            </div>
-
-                            {/* Upload File */}
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8c90a1' }}>
-                                    Bukti Transfer (JPG / PNG / PDF)
-                                </label>
-                                <div
-                                    onClick={() => fileRef.current.click()}
-                                    className="w-full rounded-xl flex flex-col items-center justify-center py-8 cursor-pointer transition-all"
-                                    style={{
-                                        border: `2px dashed ${buktiFile ? 'rgba(76,214,255,0.5)' : 'rgba(66,70,86,0.5)'}`,
-                                        background: buktiFile ? 'rgba(76,214,255,0.04)' : 'transparent',
-                                    }}>
-                                    {buktiFile ? (
-                                        <>
-                                            <span className="material-symbols-outlined text-3xl mb-2" style={{ color: '#4cd6ff' }}>task</span>
-                                            <p className="text-sm font-bold" style={{ color: '#4cd6ff' }}>{buktiFile.name}</p>
-                                            <p className="text-[10px] mt-1" style={{ color: '#8c90a1' }}>
-                                                {(buktiFile.size / 1024).toFixed(1)} KB
-                                            </p>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <span className="material-symbols-outlined text-3xl mb-2" style={{ color: '#4a4f62' }}>cloud_upload</span>
-                                            <p className="text-sm" style={{ color: '#8c90a1' }}>Klik untuk memilih file</p>
-                                            <p className="text-[10px] mt-1" style={{ color: '#4a4f62' }}>Maks. 5MB</p>
-                                        </>
-                                    )}
-                                </div>
-                                <input ref={fileRef} type="file" accept="image/*,.pdf"
-                                    className="hidden" onChange={handleFileChange} />
-                            </div>
-                        </form>
-
-                        <div className="flex justify-end gap-3 px-6 py-4"
-                            style={{ borderTop: '1px solid rgba(66,70,86,0.2)' }}>
-                            <button onClick={() => setPayModal(null)} className="btn-secondary">Batal</button>
-                            <button type="submit" form="payForm" disabled={submitting || !buktiFile}
-                                className="btn-primary"
-                                style={!buktiFile ? { opacity: 0.5 } : {}}>
-                                {submitting
-                                    ? <><span className="material-symbols-outlined spin text-lg">sync</span> Mengunggah...</>
-                                    : <><span className="material-symbols-outlined text-lg">send</span> Konfirmasi Pembayaran</>}
-                            </button>
-=======
                             {/* ── Tab Pilih Mode Pembayaran ── */}
                             <div className="grid grid-cols-2 gap-2 p-1 rounded-xl" style={{ background: '#131b2e' }}>
                                 {[
@@ -884,7 +651,6 @@ export default function RiwayatTransaksi() {
                                         : <><span className="material-symbols-outlined text-lg">credit_card</span> Lanjut Bayar</>}
                                 </button>
                             )}
->>>>>>> farhan
                         </div>
                     </div>
                 </div>

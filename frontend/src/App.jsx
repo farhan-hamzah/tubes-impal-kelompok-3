@@ -22,10 +22,6 @@ import ClientDashboard from './pages/client/Dashboard';
 import Katalog from './pages/client/Katalog';
 import KontrakClient from './pages/client/KontrakClient';
 import RiwayatTransaksi from './pages/client/RiwayatTransaksi';
-<<<<<<< HEAD
-=======
-import Monitoring from './pages/client/Monitoring';
->>>>>>> farhan
 
 // ─────────────────────────────────────────────
 // ProtectedRoute — OOP-aware role guard
@@ -104,12 +100,6 @@ function AppRoutes() {
       <Route path="/client/transaksi" element={
         <ProtectedRoute role="CLIENT"><RiwayatTransaksi /></ProtectedRoute>
       } />
-<<<<<<< HEAD
-=======
-      <Route path="/client/monitoring" element={
-        <ProtectedRoute role="CLIENT"><Monitoring /></ProtectedRoute>
-      } />
->>>>>>> farhan
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/login" replace />} />

@@ -5,29 +5,6 @@ import KontrakService from '../../services/KontrakService';
 import UserService from '../../services/UserService';
 import PaketService from '../../services/PaketService';
 
-<<<<<<< HEAD
-=======
-// ── Mock data fallback (demo / no backend) ───────────────────────
-const MOCK_KONTRAKS = [
-    { kontrakId: 'K-001', nomorKontrak: 'KTR-2024-001', namaClient: 'Budi Santoso',    namaPaket: 'H100 Research Node',      status: 'ACTIVE',        tanggalMulai: '2024-01-01', tanggalBerakhir: '2024-12-31', durasibulan: 12, totalBiaya: 540000000 },
-    { kontrakId: 'K-002', nomorKontrak: 'KTR-2024-002', namaClient: 'Siti Rahayu',     namaPaket: 'A100 Enterprise Cluster', status: 'ACTIVE',        tanggalMulai: '2024-02-01', tanggalBerakhir: '2024-07-31', durasibulan:  6, totalBiaya: 168000000 },
-    { kontrakId: 'K-003', nomorKontrak: 'KTR-2024-003', namaClient: 'Andi Wijaya',     namaPaket: 'RTX Pro Studio',          status: 'EXPIRING_SOON', tanggalMulai: '2024-01-01', tanggalBerakhir: '2024-04-30', durasibulan:  4, totalBiaya:  48000000 },
-    { kontrakId: 'K-004', nomorKontrak: 'KTR-2024-004', namaClient: 'Dewi Lestari',    namaPaket: 'Starter GPU Node',        status: 'PENDING',       tanggalMulai: '2024-04-01', tanggalBerakhir: '2024-09-30', durasibulan:  6, totalBiaya:  27000000 },
-    { kontrakId: 'K-005', nomorKontrak: 'KTR-2023-005', namaClient: 'Reza Firmansyah', namaPaket: 'V100 Legacy Compute',     status: 'EXPIRED',       tanggalMulai: '2023-06-01', tanggalBerakhir: '2023-12-31', durasibulan:  7, totalBiaya:  63000000 },
-];
-const MOCK_CLIENTS = [
-    { userId: 'U-001', nama: 'Budi Santoso' },
-    { userId: 'U-002', nama: 'Siti Rahayu' },
-    { userId: 'U-003', nama: 'Andi Wijaya' },
-    { userId: 'U-004', nama: 'Dewi Lestari' },
-];
-const MOCK_PAKETS = [
-    { paketId: 'PKT-001', namaPaket: 'H100 Research Node',      tarif: 45000000 },
-    { paketId: 'PKT-002', namaPaket: 'A100 Enterprise Cluster', tarif: 28000000 },
-    { paketId: 'PKT-003', namaPaket: 'RTX Pro Studio',          tarif: 12000000 },
-    { paketId: 'PKT-004', namaPaket: 'Starter GPU Node',        tarif:  4500000 },
-];
->>>>>>> farhan
 
 const StatusBadge = ({ status }) => {
     const map = {
@@ -62,7 +39,6 @@ export default function KontrakAdmin() {
                 UserService.getAllClients(),
                 PaketService.getAllPaket(),
             ]);
-<<<<<<< HEAD
             setKontraks(Array.isArray(k) ? k : []);
             setClients(Array.isArray(c) ? c : []);
             setPakets(Array.isArray(p) ? p : []);
@@ -70,15 +46,6 @@ export default function KontrakAdmin() {
             setKontraks([]);
             setClients([]);
             setPakets([]);
-=======
-            setKontraks(k && k.length > 0 ? k : MOCK_KONTRAKS);
-            setClients(c && c.length > 0 ? c : MOCK_CLIENTS);
-            setPakets(p && p.length > 0 ? p : MOCK_PAKETS);
-        } catch {
-            setKontraks(MOCK_KONTRAKS);
-            setClients(MOCK_CLIENTS);
-            setPakets(MOCK_PAKETS);
->>>>>>> farhan
         } finally {
             setLoading(false);
         }
@@ -86,7 +53,6 @@ export default function KontrakAdmin() {
 
     const handleFilter = async s => {
         setFilter(s);
-<<<<<<< HEAD
         if (!s) { fetchAll(); return; }
         try {
             const data = await KontrakService.getKontrakByStatus(s);
@@ -94,14 +60,6 @@ export default function KontrakAdmin() {
         } catch {
             setKontraks([]);
         }
-=======
-        if (!s) { setKontraks(MOCK_KONTRAKS); return; }
-        setKontraks(MOCK_KONTRAKS.filter(k => k.status === s));
-        try {
-            const data = await KontrakService.getKontrakByStatus(s);
-            if (data && data.length > 0) setKontraks(data);
-        } catch { }
->>>>>>> farhan
     };
 
     const handleSubmit = async e => {

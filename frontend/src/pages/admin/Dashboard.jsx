@@ -23,8 +23,6 @@ const KpiCard = ({ label, value, delta, icon, accent }) => (
     </div>
 );
 
-<<<<<<< HEAD
-=======
 const ResourceBar = ({ label, value, color }) => (
     <div className="space-y-2">
         <div className="flex justify-between text-xs font-bold uppercase tracking-wider">
@@ -36,7 +34,6 @@ const ResourceBar = ({ label, value, color }) => (
         </div>
     </div>
 );
->>>>>>> farhan
 
 // ── Main Component ───────────────────────────────────────
 export default function AdminDashboard() {
@@ -109,25 +106,14 @@ export default function AdminDashboard() {
                         </div>
                         <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#4cd6ff' }}>GPU Units Available</p>
                         <div className="flex items-baseline gap-2">
-<<<<<<< HEAD
                             <h3 className="font-display text-3xl font-bold" style={{ color: '#dae2fd' }}>–</h3>
                         </div>
                         <div className="progress-bar mt-4">
                             <div className="progress-fill" style={{ width: '0%' }} />
-=======
-                            <h3 className="font-display text-3xl font-bold" style={{ color: '#dae2fd' }}>15/100</h3>
-                            <span className="text-xs" style={{ color: '#ffb59d' }}>High Demand</span>
-                        </div>
-                        <div className="progress-bar mt-4">
-                            <div className="progress-fill" style={{ width: '85%' }} />
->>>>>>> farhan
                         </div>
                     </div>
                 </div>
 
-<<<<<<< HEAD
-        </div>
-=======
                 {/* Charts */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Revenue Chart */}
@@ -222,7 +208,6 @@ export default function AdminDashboard() {
                     </div>
                 </div>
             </div>
->>>>>>> farhan
         </MainLayout>
     );
 }

@@ -3,20 +3,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../../services/AuthService';
 import { useAuth } from '../../context/AuthContext';
 
-<<<<<<< HEAD
-=======
-// ── Mock users for demo/preview mode (no backend required) ──
-const DEMO_USERS = {
-    ADMIN: {
-        user: { nama: 'Super Admin', email: 'admin@tensor.id', role: 'ADMIN', adminId: 'ADMIN-001', clientId: null },
-        token: 'demo-admin-token',
-    },
-    CLIENT: {
-        user: { nama: 'Client Demo', email: 'client@tensor.id', role: 'CLIENT', adminId: null, clientId: 'CLIENT-001' },
-        token: 'demo-client-token',
-    },
-};
->>>>>>> farhan
 
 export default function Login() {
     const navigate = useNavigate();
@@ -48,15 +34,6 @@ export default function Login() {
         }
     };
 
-<<<<<<< HEAD
-=======
-    // Demo mode — bypass backend completely
-    const demoLogin = (role) => {
-        const { user, token } = DEMO_USERS[role];
-        loginUser(user, token);
-        navigate(role === 'ADMIN' ? '/admin/dashboard' : '/client/dashboard');
-    };
->>>>>>> farhan
 
     return (
         <div className="min-h-screen grid-bg flex items-center justify-center p-4"
@@ -247,38 +224,6 @@ export default function Login() {
                             </Link>
                         </p>
 
-<<<<<<< HEAD
-=======
-                        {/* Demo Mode */}
-                        <div className="mt-6 space-y-3">
-                            <div className="flex items-center gap-3">
-                                <div className="flex-1 h-px" style={{ background: 'rgba(66,70,86,0.4)' }} />
-                                <span className="text-[10px] font-bold uppercase tracking-widest"
-                                    style={{ color: '#4a4f62' }}>Demo Tanpa Backend</span>
-                                <div className="flex-1 h-px" style={{ background: 'rgba(66,70,86,0.4)' }} />
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <button
-                                    onClick={() => demoLogin('ADMIN')}
-                                    className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-bold transition-all"
-                                    style={{ background: 'rgba(205,189,255,0.1)', color: '#cdbdff', border: '1px solid rgba(205,189,255,0.25)' }}
-                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(205,189,255,0.2)'}
-                                    onMouseLeave={e => e.currentTarget.style.background = 'rgba(205,189,255,0.1)'}>
-                                    <span className="material-symbols-outlined text-[18px]">admin_panel_settings</span>
-                                    Preview Admin
-                                </button>
-                                <button
-                                    onClick={() => demoLogin('CLIENT')}
-                                    className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-bold transition-all"
-                                    style={{ background: 'rgba(76,214,255,0.1)', color: '#4cd6ff', border: '1px solid rgba(76,214,255,0.25)' }}
-                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(76,214,255,0.2)'}
-                                    onMouseLeave={e => e.currentTarget.style.background = 'rgba(76,214,255,0.1)'}>
-                                    <span className="material-symbols-outlined text-[18px]">person</span>
-                                    Preview Client
-                                </button>
-                            </div>
-                        </div>
->>>>>>> farhan
                     </div>
                 </div>
             </div>
