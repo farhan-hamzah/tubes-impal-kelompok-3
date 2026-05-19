@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { MainLayout } from '../../components/layout/Layout';
 import { useAuth } from '../../context/AuthContext';
 import { invoiceService } from '../../services/InvoiceService';
+import { paymentService } from '../../services/PaymentService';
 
 // ── Helpers ──────────────────────────────────────────────────────
 const rupiah = (n) =>
@@ -13,21 +14,31 @@ const tgl = (d) => {
 };
 
 
+
 const STATUS_CONFIG = {
     PAID:    { label: 'Lunas',        bg: 'rgba(76,214,255,0.12)',  color: '#4cd6ff',  icon: 'check_circle' },
     UNPAID:  { label: 'Belum Bayar',  bg: 'rgba(205,189,255,0.12)', color: '#cdbdff', icon: 'pending' },
     OVERDUE: { label: 'Jatuh Tempo',  bg: 'rgba(255,180,171,0.12)', color: '#ffb4ab', icon: 'warning' },
 };
 
-const METODE_OPTIONS = [
+// Metode khusus untuk transfer manual saja
+const TRANSFER_OPTIONS = [
     'Transfer Bank BCA',
     'Transfer Bank Mandiri',
     'Transfer Bank BRI',
     'Transfer Bank BNI',
-    'Virtual Account',
-    'QRIS / GoPay / OVO',
-    'Kartu Kredit',
 ];
+
+// ── Load Midtrans Snap script sekali ──────────────────────────────
+const loadSnapScript = () => {
+    if (document.getElementById('midtrans-snap')) return;
+    const script = document.createElement('script');
+    script.id = 'midtrans-snap';
+    // Ganti ke https://app.midtrans.com/snap/snap.js untuk production
+    script.src = 'https://app.sandbox.midtrans.com/snap/snap.js';
+    script.setAttribute('data-client-key', import.meta.env.VITE_MIDTRANS_CLIENT_KEY || '');
+    document.head.appendChild(script);
+};
 
 export default function RiwayatTransaksi() {
     const { user } = useAuth();
@@ -35,30 +46,49 @@ export default function RiwayatTransaksi() {
 
     const [invoices, setInvoices]     = useState([]);
     const [loading, setLoading]       = useState(true);
-    const [selected, setSelected]     = useState(null);   // invoice detail modal
-    const [payModal, setPayModal]     = useState(null);   // payment form modal
+    const [selected, setSelected]     = useState(null);
+    const [payModal, setPayModal]     = useState(null);
     const [filterStatus, setFilter]   = useState('ALL');
 
-    // Payment form state
-    const [buktiFile, setBuktiFile]   = useState(null);
-    const [metode, setMetode]         = useState(METODE_OPTIONS[0]);
-    const [submitting, setSubmitting] = useState(false);
-    const [doneId, setDoneId]         = useState(null);
+    // Payment mode: 'MANUAL' | 'MIDTRANS'
+    const [payMode, setPayMode]       = useState('MANUAL');
 
-    useEffect(() => { load(); }, [user]);
+    // Manual upload state
+    const [buktiFile, setBuktiFile]   = useState(null);
+    const [metode, setMetode]         = useState(TRANSFER_OPTIONS[0]);
+    const [submitting, setSubmitting] = useState(false);
+
+    // Midtrans state
+    const [snapLoading, setSnapLoading] = useState(false);
+    const [snapError, setSnapError]     = useState('');
+
+    // Feedback
+    const [doneMsg, setDoneMsg]       = useState('');
+
+    useEffect(() => {
+        load();
+    }, [user]);
 
     const load = async () => {
         setLoading(true);
         try {
             const data = user?.clientId
                 ? await invoiceService.getInvoiceByClient(user.clientId)
-                : [];
+                : null;
             setInvoices(Array.isArray(data) ? data : []);
         } catch {
             setInvoices([]);
         } finally {
             setLoading(false);
         }
+    };
+
+    const openPayModal = (inv) => {
+        setPayModal(inv);
+        setBuktiFile(null);
+        setMetode(TRANSFER_OPTIONS[0]);
+        setPayMode('MANUAL');
+        setSnapError('');
     };
 
     const filtered = filterStatus === 'ALL'
@@ -69,45 +99,79 @@ export default function RiwayatTransaksi() {
     const totalLunas   = invoices.filter(i => i.statusPembayaran === 'PAID').reduce((s, i) => s + (i.jumlahTagihan || 0), 0);
     const totalBelum   = invoices.filter(i => i.statusPembayaran !== 'PAID').reduce((s, i) => s + (i.jumlahTagihan || 0), 0);
 
-    const handleFileChange = e => {
-        const f = e.target.files[0];
-        if (f) setBuktiFile(f);
-    };
-
+    // ── Handler: Upload Bukti Manual ─────────────────────────────
     const handlePay = async e => {
         e.preventDefault();
-        if (!buktiFile) return alert('Pilih file bukti pembayaran.');
+        if (!buktiFile) return;
         setSubmitting(true);
         try {
-            if (user?.clientId !== 'CLIENT-001') {
+            if (user?.clientId) {
                 const reader = new FileReader();
                 reader.onloadend = async () => {
                     const base64 = reader.result.split(',')[1];
                     await invoiceService.uploadBuktiPembayaran(payModal.invoiceId, base64);
-                    finalizePayment();
+                    finalizeManual();
                 };
                 reader.readAsDataURL(buktiFile);
             } else {
-                // Demo mode
-                await new Promise(r => setTimeout(r, 800));
-                finalizePayment();
+                finalizeManual();
             }
         } catch (err) {
             alert('Gagal mengupload: ' + err.message);
-        } finally {
             setSubmitting(false);
         }
     };
 
-    const finalizePayment = () => {
-        setDoneId(payModal.invoiceId);
-        setInvoices(prev => prev.map(inv =>
-            inv.invoiceId === payModal.invoiceId
-                ? { ...inv, statusPembayaran: 'PAID', metodePembayaran: metode, tanggalBayar: new Date().toISOString().split('T')[0] }
-                : inv
-        ));
+    const finalizeManual = () => {
+        // Status tetap UNPAID — menunggu validasi admin
+        setDoneMsg('Bukti pembayaran berhasil diunggah! Tim kami akan memverifikasi dalam 1×24 jam.');
         setPayModal(null);
         setBuktiFile(null);
+        setSubmitting(false);
+    };
+
+    // ── Handler: Bayar via Midtrans Snap ─────────────────────────
+    const handleMidtrans = async () => {
+        setSnapLoading(true);
+        setSnapError('');
+        // Load Midtrans script on demand (only when user actually pays via Midtrans)
+        loadSnapScript();
+        try {
+            // Request snap token dari backend
+            const res = await paymentService.getSnapToken(payModal.invoiceId);
+            const snapToken = res?.snapToken || res?.token;
+
+            if (!snapToken) throw new Error('Snap token tidak diterima dari server.');
+
+            // Buka popup Midtrans Snap
+            window.snap.pay(snapToken, {
+                onSuccess: () => {
+                    // Webhook backend akan update status PAID otomatis
+                    // Di frontend, update optimis langsung
+                    setInvoices(prev => prev.map(inv =>
+                        inv.invoiceId === payModal.invoiceId
+                            ? { ...inv, statusPembayaran: 'PAID', metodePembayaran: 'Midtrans', tanggalPembayaran: new Date().toISOString().split('T')[0] }
+                            : inv
+                    ));
+                    setDoneMsg('Pembayaran berhasil! Status invoice diperbarui otomatis.');
+                    setPayModal(null);
+                },
+                onPending: () => {
+                    setDoneMsg('Pembayaran sedang diproses. Status akan diperbarui otomatis.');
+                    setPayModal(null);
+                },
+                onError: (err) => {
+                    setSnapError('Pembayaran gagal: ' + (err?.message || 'Coba lagi.'));
+                },
+                onClose: () => {
+                    // User tutup popup tanpa bayar — tidak perlu action
+                },
+            });
+        } catch (err) {
+            setSnapError(err.message || 'Gagal memuat halaman pembayaran Midtrans.');
+        } finally {
+            setSnapLoading(false);
+        }
     };
 
     return (
@@ -123,19 +187,17 @@ export default function RiwayatTransaksi() {
                         Riwayat <span style={{ color: '#4cd6ff' }}>Transaksi</span>
                     </h1>
                     <p className="text-sm mt-2" style={{ color: '#8c90a1' }}>
-                        Kelola invoice, unggah bukti pembayaran, dan pantau status tagihan layanan Anda.
+                        Kelola invoice, pilih metode pembayaran, dan pantau status tagihan layanan Anda.
                     </p>
                 </div>
 
                 {/* ── Success Banner ── */}
-                {doneId && (
+                {doneMsg && (
                     <div className="p-4 rounded-xl flex items-center gap-3 fade-in"
                         style={{ background: 'rgba(76,214,255,0.1)', border: '1px solid rgba(76,214,255,0.3)' }}>
                         <span className="material-symbols-outlined" style={{ color: '#4cd6ff' }}>check_circle</span>
-                        <p className="text-sm font-medium" style={{ color: '#4cd6ff' }}>
-                            Bukti pembayaran berhasil diunggah! Tim kami akan memverifikasi dalam 1×24 jam.
-                        </p>
-                        <button onClick={() => setDoneId(null)} className="ml-auto" style={{ color: '#4a4f62' }}>
+                        <p className="text-sm font-medium" style={{ color: '#4cd6ff' }}>{doneMsg}</p>
+                        <button onClick={() => setDoneMsg('')} className="ml-auto" style={{ color: '#4a4f62' }}>
                             <span className="material-symbols-outlined text-sm">close</span>
                         </button>
                     </div>
@@ -144,9 +206,9 @@ export default function RiwayatTransaksi() {
                 {/* ── KPI Summary ── */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {[
-                        { label: 'Total Tagihan', value: rupiah(totalTagihan), color: '#dae2fd', icon: 'receipt_long', bg: 'rgba(218,226,253,0.06)' },
-                        { label: 'Sudah Lunas', value: rupiah(totalLunas),   color: '#4cd6ff',  icon: 'check_circle', bg: 'rgba(76,214,255,0.08)' },
-                        { label: 'Belum Dibayar', value: rupiah(totalBelum), color: '#ffb4ab',  icon: 'error',        bg: 'rgba(255,180,171,0.08)' },
+                        { label: 'Total Tagihan',  value: rupiah(totalTagihan), color: '#dae2fd', icon: 'receipt_long', bg: 'rgba(218,226,253,0.06)' },
+                        { label: 'Sudah Lunas',    value: rupiah(totalLunas),   color: '#4cd6ff',  icon: 'check_circle', bg: 'rgba(76,214,255,0.08)' },
+                        { label: 'Belum Dibayar',  value: rupiah(totalBelum),   color: '#ffb4ab',  icon: 'error',        bg: 'rgba(255,180,171,0.08)' },
                     ].map(({ label, value, color, icon, bg }) => (
                         <div key={label} className="kpi-card flex items-center gap-4">
                             <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
@@ -205,12 +267,12 @@ export default function RiwayatTransaksi() {
                                     return (
                                         <tr key={inv.invoiceId}>
                                             <td>
-                                                <p className="font-mono text-xs font-bold" style={{ color: '#4cd6ff' }}>{inv.nomorInvoice}</p>
-                                                <p className="text-[10px] mt-0.5" style={{ color: '#4a4f62' }}>{inv.nomorKontrak}</p>
+                                                <p className="font-mono text-xs font-bold" style={{ color: '#4cd6ff' }}>{inv.nomorInvoice || '–'}</p>
+                                                <p className="text-[10px] mt-0.5" style={{ color: '#4a4f62' }}>{inv.nomorKontrak || '–'}</p>
                                             </td>
                                             <td>
                                                 <p className="font-semibold text-sm" style={{ color: '#dae2fd' }}>
-                                                    {inv.namaPaket || 'Paket Layanan'}
+                                                    {inv.namaPaket || inv.nomorKontrak || '–'}
                                                 </p>
                                             </td>
                                             <td>
@@ -243,9 +305,9 @@ export default function RiwayatTransaksi() {
                                                         Detail
                                                     </button>
                                                     {needsPay && (
-                                                        <button onClick={() => { setPayModal(inv); setBuktiFile(null); setMetode(METODE_OPTIONS[0]); }}
+                                                        <button onClick={() => openPayModal(inv)}
                                                             className="btn-primary text-xs py-1.5 px-3">
-                                                            <span className="material-symbols-outlined text-[15px]">upload</span>
+                                                            <span className="material-symbols-outlined text-[15px]">payment</span>
                                                             Bayar
                                                         </button>
                                                     )}
@@ -275,7 +337,6 @@ export default function RiwayatTransaksi() {
                             </button>
                         </div>
                         <div className="p-6 space-y-5">
-                            {/* Status Banner */}
                             {(() => {
                                 const sc = STATUS_CONFIG[selected.statusPembayaran] || STATUS_CONFIG.UNPAID;
                                 return (
@@ -284,19 +345,17 @@ export default function RiwayatTransaksi() {
                                         <span className="material-symbols-outlined text-2xl" style={{ color: sc.color }}>{sc.icon}</span>
                                         <div>
                                             <p className="font-bold text-sm" style={{ color: sc.color }}>{sc.label}</p>
-                                            {selected.tanggalBayar && (
-                                                <p className="text-xs" style={{ color: '#8c90a1' }}>Dibayar: {tgl(selected.tanggalBayar)}</p>
+                                            {selected.tanggalPembayaran && (
+                                                <p className="text-xs" style={{ color: '#8c90a1' }}>Dibayar: {tgl(selected.tanggalPembayaran)}</p>
                                             )}
                                         </div>
                                     </div>
                                 );
                             })()}
-
-                            {/* Info Grid */}
                             <div className="rounded-xl p-4 space-y-3" style={{ background: '#131b2e' }}>
                                 {[
                                     ['No. Kontrak', selected.nomorKontrak],
-                                    ['Paket Layanan', selected.namaPaket || 'Paket Layanan'],
+                                    ['Paket Layanan', selected.namaPaket || selected.nomorKontrak || '–'],
                                     ['Periode Tagihan', `${tgl(selected.tagihanMulai)} – ${tgl(selected.tagihanAkhir)}`],
                                     ['Jatuh Tempo', tgl(selected.tanggalJatuhTempo)],
                                     ['Metode Bayar', selected.metodePembayaran || '–'],
@@ -318,10 +377,10 @@ export default function RiwayatTransaksi() {
                         <div className="flex justify-end gap-3 px-6 py-4"
                             style={{ borderTop: '1px solid rgba(66,70,86,0.2)' }}>
                             {(selected.statusPembayaran === 'UNPAID' || selected.statusPembayaran === 'OVERDUE') && (
-                                <button onClick={() => { setPayModal(selected); setSelected(null); setBuktiFile(null); }}
+                                <button onClick={() => { openPayModal(selected); setSelected(null); }}
                                     className="btn-primary">
-                                    <span className="material-symbols-outlined text-[18px]">upload</span>
-                                    Upload Bukti Bayar
+                                    <span className="material-symbols-outlined text-[18px]">payment</span>
+                                    Bayar Sekarang
                                 </button>
                             )}
                             <button onClick={() => setSelected(null)} className="btn-secondary">Tutup</button>
@@ -330,22 +389,23 @@ export default function RiwayatTransaksi() {
                 </div>
             )}
 
-            {/* ══ MODAL: Upload Pembayaran ══ */}
+            {/* ══ MODAL: Pilih Metode Pembayaran ══ */}
             {payModal && (
                 <div className="modal-overlay">
                     <div className="modal-box max-w-md">
+                        {/* Header */}
                         <div className="flex justify-between items-center px-6 py-4"
                             style={{ borderBottom: '1px solid rgba(66,70,86,0.2)' }}>
                             <div>
-                                <h3 className="font-display font-bold text-lg" style={{ color: '#dae2fd' }}>Upload Bukti Pembayaran</h3>
-                                <p className="text-xs mt-0.5" style={{ color: '#4cd6ff' }}>{payModal.nomorInvoice}</p>
+                                <h3 className="font-display font-bold text-lg" style={{ color: '#dae2fd' }}>Pembayaran Invoice</h3>
+                                <p className="text-xs mt-0.5 font-mono" style={{ color: '#4cd6ff' }}>{payModal.nomorInvoice}</p>
                             </div>
                             <button onClick={() => setPayModal(null)} style={{ color: '#4a4f62' }}>
                                 <span className="material-symbols-outlined">close</span>
                             </button>
                         </div>
 
-                        <form id="payForm" onSubmit={handlePay} className="p-6 space-y-5">
+                        <div className="p-6 space-y-5">
                             {/* Invoice Summary */}
                             <div className="rounded-xl p-4 flex justify-between items-center"
                                 style={{ background: '#131b2e' }}>
@@ -364,85 +424,174 @@ export default function RiwayatTransaksi() {
                                 </div>
                             </div>
 
-                            {/* Metode Pembayaran */}
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8c90a1' }}>
-                                    Metode Pembayaran
-                                </label>
-                                <div className="relative">
-                                    <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px]"
-                                        style={{ color: '#4a4f62' }}>account_balance</span>
-                                    <select value={metode} onChange={e => setMetode(e.target.value)}
-                                        className="input input-icon appearance-none pr-10"
-                                        style={{ colorScheme: 'dark' }}>
-                                        {METODE_OPTIONS.map(m => <option key={m} value={m}>{m}</option>)}
-                                    </select>
-                                    <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-[18px] pointer-events-none"
-                                        style={{ color: '#4a4f62' }}>expand_more</span>
-                                </div>
-                            </div>
-
-                            {/* Rekening Tujuan */}
-                            <div className="rounded-xl p-4 space-y-2" style={{ background: '#131b2e', border: '1px solid rgba(76,214,255,0.1)' }}>
-                                <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: '#4cd6ff' }}>
-                                    Info Rekening Tujuan
-                                </p>
+                            {/* ── Tab Pilih Mode Pembayaran ── */}
+                            <div className="grid grid-cols-2 gap-2 p-1 rounded-xl" style={{ background: '#131b2e' }}>
                                 {[
-                                    ['Bank', 'PT TensorLease Indonesia'],
-                                    ['No. Rekening', '1234-5678-9012'],
-                                    ['Atas Nama', 'PT TensorLease Indonesia'],
-                                    ['Berita', payModal.nomorInvoice],
-                                ].map(([k, v]) => (
-                                    <div key={k} className="flex justify-between text-xs">
-                                        <span style={{ color: '#8c90a1' }}>{k}</span>
-                                        <span className="font-bold font-mono" style={{ color: '#dae2fd' }}>{v}</span>
-                                    </div>
+                                    { id: 'MANUAL',   label: 'Transfer Manual', icon: 'account_balance' },
+                                    { id: 'MIDTRANS', label: 'Bayar via Midtrans', icon: 'credit_card' },
+                                ].map(({ id, label, icon }) => (
+                                    <button key={id} onClick={() => { setPayMode(id); setSnapError(''); }}
+                                        className="flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-sm font-bold transition-all"
+                                        style={payMode === id
+                                            ? { background: 'rgba(76,214,255,0.15)', color: '#4cd6ff', border: '1px solid rgba(76,214,255,0.35)' }
+                                            : { background: 'transparent', color: '#8c90a1', border: '1px solid transparent' }}>
+                                        <span className="material-symbols-outlined text-[18px]">{icon}</span>
+                                        {label}
+                                    </button>
                                 ))}
                             </div>
 
-                            {/* Upload File */}
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8c90a1' }}>
-                                    Bukti Transfer (JPG / PNG / PDF)
-                                </label>
-                                <div
-                                    onClick={() => fileRef.current.click()}
-                                    className="w-full rounded-xl flex flex-col items-center justify-center py-8 cursor-pointer transition-all"
-                                    style={{
-                                        border: `2px dashed ${buktiFile ? 'rgba(76,214,255,0.5)' : 'rgba(66,70,86,0.5)'}`,
-                                        background: buktiFile ? 'rgba(76,214,255,0.04)' : 'transparent',
-                                    }}>
-                                    {buktiFile ? (
-                                        <>
-                                            <span className="material-symbols-outlined text-3xl mb-2" style={{ color: '#4cd6ff' }}>task</span>
-                                            <p className="text-sm font-bold" style={{ color: '#4cd6ff' }}>{buktiFile.name}</p>
-                                            <p className="text-[10px] mt-1" style={{ color: '#8c90a1' }}>
-                                                {(buktiFile.size / 1024).toFixed(1)} KB
-                                            </p>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <span className="material-symbols-outlined text-3xl mb-2" style={{ color: '#4a4f62' }}>cloud_upload</span>
-                                            <p className="text-sm" style={{ color: '#8c90a1' }}>Klik untuk memilih file</p>
-                                            <p className="text-[10px] mt-1" style={{ color: '#4a4f62' }}>Maks. 5MB</p>
-                                        </>
+                            {/* ── Panel: Transfer Manual ── */}
+                            {payMode === 'MANUAL' && (
+                                <form id="payForm" onSubmit={handlePay} className="space-y-4">
+                                    {/* Pilih bank */}
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8c90a1' }}>
+                                            Bank Tujuan
+                                        </label>
+                                        <div className="relative">
+                                            <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px]"
+                                                style={{ color: '#4a4f62' }}>account_balance</span>
+                                            <select value={metode} onChange={e => setMetode(e.target.value)}
+                                                className="input input-icon appearance-none pr-10"
+                                                style={{ colorScheme: 'dark' }}>
+                                                {TRANSFER_OPTIONS.map(m => <option key={m} value={m}>{m}</option>)}
+                                            </select>
+                                            <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-[18px] pointer-events-none"
+                                                style={{ color: '#4a4f62' }}>expand_more</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Info rekening */}
+                                    <div className="rounded-xl p-4 space-y-2"
+                                        style={{ background: '#131b2e', border: '1px solid rgba(76,214,255,0.1)' }}>
+                                        <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: '#4cd6ff' }}>
+                                            Info Rekening Tujuan
+                                        </p>
+                                        {[
+                                            ['Bank', 'PT TensorLease Indonesia'],
+                                            ['No. Rekening', '1234-5678-9012'],
+                                            ['Atas Nama', 'PT TensorLease Indonesia'],
+                                            ['Berita', payModal.nomorInvoice],
+                                        ].map(([k, v]) => (
+                                            <div key={k} className="flex justify-between text-xs">
+                                                <span style={{ color: '#8c90a1' }}>{k}</span>
+                                                <span className="font-bold font-mono" style={{ color: '#dae2fd' }}>{v}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Upload bukti */}
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8c90a1' }}>
+                                            Bukti Transfer (JPG / PNG / PDF)
+                                        </label>
+                                        <div onClick={() => fileRef.current.click()}
+                                            className="w-full rounded-xl flex flex-col items-center justify-center py-7 cursor-pointer transition-all"
+                                            style={{
+                                                border: `2px dashed ${buktiFile ? 'rgba(76,214,255,0.5)' : 'rgba(66,70,86,0.5)'}`,
+                                                background: buktiFile ? 'rgba(76,214,255,0.04)' : 'transparent',
+                                            }}>
+                                            {buktiFile ? (
+                                                <>
+                                                    <span className="material-symbols-outlined text-3xl mb-2" style={{ color: '#4cd6ff' }}>task</span>
+                                                    <p className="text-sm font-bold" style={{ color: '#4cd6ff' }}>{buktiFile.name}</p>
+                                                    <p className="text-[10px] mt-1" style={{ color: '#8c90a1' }}>
+                                                        {(buktiFile.size / 1024).toFixed(1)} KB
+                                                    </p>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span className="material-symbols-outlined text-3xl mb-2" style={{ color: '#4a4f62' }}>cloud_upload</span>
+                                                    <p className="text-sm" style={{ color: '#8c90a1' }}>Klik untuk memilih file</p>
+                                                    <p className="text-[10px] mt-1" style={{ color: '#4a4f62' }}>Maks. 5MB</p>
+                                                </>
+                                            )}
+                                        </div>
+                                        <input ref={fileRef} type="file" accept="image/*,.pdf"
+                                            className="hidden" onChange={e => e.target.files[0] && setBuktiFile(e.target.files[0])} />
+                                    </div>
+
+                                    {/* Info: menunggu validasi admin */}
+                                    <div className="flex items-start gap-2 p-3 rounded-xl"
+                                        style={{ background: 'rgba(205,189,255,0.08)', border: '1px solid rgba(205,189,255,0.2)' }}>
+                                        <span className="material-symbols-outlined text-[16px] shrink-0 mt-0.5" style={{ color: '#cdbdff' }}>info</span>
+                                        <p className="text-xs" style={{ color: '#cdbdff' }}>
+                                            Pembayaran manual akan diverifikasi oleh admin dalam 1×24 jam sebelum status diubah menjadi Lunas.
+                                        </p>
+                                    </div>
+                                </form>
+                            )}
+
+                            {/* ── Panel: Midtrans ── */}
+                            {payMode === 'MIDTRANS' && (
+                                <div className="space-y-4">
+                                    {/* Info Midtrans */}
+                                    <div className="rounded-xl p-5 text-center space-y-3"
+                                        style={{ background: '#131b2e', border: '1px solid rgba(76,214,255,0.1)' }}>
+                                        <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto"
+                                            style={{ background: 'rgba(76,214,255,0.1)' }}>
+                                            <span className="material-symbols-outlined text-3xl" style={{ color: '#4cd6ff' }}>credit_card</span>
+                                        </div>
+                                        <p className="font-display font-bold text-lg" style={{ color: '#dae2fd' }}>Bayar via Midtrans</p>
+                                        <p className="text-xs" style={{ color: '#8c90a1' }}>
+                                            Mendukung QRIS, VA Bank, GoPay, OVO, ShopeePay, dan kartu kredit/debit.
+                                            Status invoice diperbarui <strong style={{ color: '#4cd6ff' }}>otomatis</strong> setelah pembayaran berhasil — tanpa perlu validasi admin.
+                                        </p>
+                                        <div className="flex justify-center gap-2 flex-wrap pt-1">
+                                            {['QRIS', 'VA Bank', 'GoPay', 'OVO', 'Kartu Kredit'].map(m => (
+                                                <span key={m} className="text-[10px] font-bold px-2 py-1 rounded-lg"
+                                                    style={{ background: 'rgba(76,214,255,0.08)', color: '#4cd6ff' }}>
+                                                    {m}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Info: auto acc */}
+                                    <div className="flex items-start gap-2 p-3 rounded-xl"
+                                        style={{ background: 'rgba(76,214,255,0.06)', border: '1px solid rgba(76,214,255,0.2)' }}>
+                                        <span className="material-symbols-outlined text-[16px] shrink-0 mt-0.5" style={{ color: '#4cd6ff' }}>bolt</span>
+                                        <p className="text-xs" style={{ color: '#4cd6ff' }}>
+                                            Pembayaran Midtrans dikonfirmasi otomatis secara real-time. Tidak perlu menunggu verifikasi admin.
+                                        </p>
+                                    </div>
+
+                                    {/* Error Midtrans */}
+                                    {snapError && (
+                                        <div className="flex items-start gap-2 p-3 rounded-xl fade-in"
+                                            style={{ background: 'rgba(147,0,10,0.2)', borderLeft: '3px solid #ffb4ab' }}>
+                                            <span className="material-symbols-outlined text-[16px] shrink-0" style={{ color: '#ffb4ab' }}>report</span>
+                                            <p className="text-xs" style={{ color: '#ffb4ab' }}>{snapError}</p>
+                                        </div>
                                     )}
                                 </div>
-                                <input ref={fileRef} type="file" accept="image/*,.pdf"
-                                    className="hidden" onChange={handleFileChange} />
-                            </div>
-                        </form>
+                            )}
+                        </div>
 
+                        {/* Footer Actions */}
                         <div className="flex justify-end gap-3 px-6 py-4"
                             style={{ borderTop: '1px solid rgba(66,70,86,0.2)' }}>
                             <button onClick={() => setPayModal(null)} className="btn-secondary">Batal</button>
-                            <button type="submit" form="payForm" disabled={submitting || !buktiFile}
-                                className="btn-primary"
-                                style={!buktiFile ? { opacity: 0.5 } : {}}>
-                                {submitting
-                                    ? <><span className="material-symbols-outlined spin text-lg">sync</span> Mengunggah...</>
-                                    : <><span className="material-symbols-outlined text-lg">send</span> Konfirmasi Pembayaran</>}
-                            </button>
+
+                            {payMode === 'MANUAL' ? (
+                                <button type="submit" form="payForm"
+                                    disabled={submitting || !buktiFile}
+                                    className="btn-primary"
+                                    style={!buktiFile ? { opacity: 0.5 } : {}}>
+                                    {submitting
+                                        ? <><span className="material-symbols-outlined spin text-lg">sync</span> Mengunggah...</>
+                                        : <><span className="material-symbols-outlined text-lg">upload</span> Upload Bukti</>}
+                                </button>
+                            ) : (
+                                <button onClick={handleMidtrans}
+                                    disabled={snapLoading}
+                                    className="btn-primary">
+                                    {snapLoading
+                                        ? <><span className="material-symbols-outlined spin text-lg">sync</span> Memuat...</>
+                                        : <><span className="material-symbols-outlined text-lg">credit_card</span> Lanjut Bayar</>}
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>

@@ -5,12 +5,20 @@ class UserService extends BaseService {
 
     // Admin — client management
     async getAllClients()              { return this.get('/admin/clients'); }
-    async getClientById(id)           { return this.get(`/admin/clients/${id}`); }
 
-    // User profile
+    // User profile (FR-03)
     async getProfile(userId)          { return this.get(`/user/profile/${userId}`); }
     async updateProfile(userId, data) { return this.put(`/user/update/${userId}`, data); }
+
+    // FR-04: Hapus akun
     async deleteAccount(userId)       { return this.delete(`/user/delete/${userId}`); }
+
+    // FR-06: Logout — invalidate token di server
+    async logout(token)               {
+        return this.post('/user/logout', {}, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+    }
 }
 
 export default new UserService();

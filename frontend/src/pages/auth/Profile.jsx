@@ -1,19 +1,27 @@
 import { useState, useEffect } from 'react';
 import { MainLayout } from '../../components/layout/Layout';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import userService from '../../services/UserService';
 
 export default function Profile() {
-    const { user } = useAuth();
-    const [editing, setEditing] = useState(false);
-    const [form, setForm] = useState({
+    const { user, logoutUser } = useAuth();
+    const navigate = useNavigate();
+
+    const [editing, setEditing]           = useState(false);
+    const [form, setForm]                 = useState({
         nama: user?.nama || '',
         email: user?.email || '',
         nomorTelepon: user?.nomorTelepon || '',
     });
-    const [saved, setSaved] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
+    const [saved, setSaved]               = useState(false);
+    const [loading, setLoading]           = useState(false);
+    const [error, setError]               = useState('');
+
+    // FR-04: hapus akun state
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deleteLoading, setDeleteLoading]     = useState(false);
+    const [deleteError, setDeleteError]         = useState('');
 
     useEffect(() => {
         if (!user?.clientId && !user?.adminId) return;
@@ -50,6 +58,22 @@ export default function Profile() {
             setError(err.message || 'Gagal menyimpan profil.');
         } finally {
             setLoading(false);
+        }
+    };
+
+    // FR-04: konfirmasi hapus akun
+    const handleDeleteAccount = async () => {
+        setDeleteLoading(true);
+        setDeleteError('');
+        try {
+            const userId = user?.clientId || user?.adminId;
+            await userService.deleteAccount(userId);
+            // Logout otomatis setelah akun terhapus
+            await logoutUser();
+            navigate('/login', { replace: true });
+        } catch (err) {
+            setDeleteError(err.message || 'Gagal menghapus akun. Coba lagi.');
+            setDeleteLoading(false);
         }
     };
 
@@ -144,16 +168,64 @@ export default function Profile() {
                     </form>
                 </div>
 
-                {/* Danger Zone */}
+                {/* Danger Zone — FR-04 */}
                 <div className="card p-6" style={{ borderColor: 'rgba(255,180,171,0.2)' }}>
                     <h3 className="font-display font-bold text-lg mb-2" style={{ color: '#ffb4ab' }}>Zona Berbahaya</h3>
-                    <p className="text-sm mb-4" style={{ color: '#8c90a1' }}>Tindakan ini tidak dapat dibatalkan. Harap pertimbangkan dengan matang.</p>
-                    <button className="btn-danger">
+                    <p className="text-sm mb-4" style={{ color: '#8c90a1' }}>
+                        Tindakan ini tidak dapat dibatalkan. Seluruh data akun akan dihapus permanen.
+                    </p>
+                    <button onClick={() => setShowDeleteModal(true)} className="btn-danger">
                         <span className="material-symbols-outlined text-[18px]">delete_forever</span>
                         Hapus Akun
                     </button>
                 </div>
             </div>
+
+            {/* FR-04: Modal konfirmasi hapus akun */}
+            {showDeleteModal && (
+                <div className="modal-overlay" onClick={() => !deleteLoading && setShowDeleteModal(false)}>
+                    <div className="modal-box max-w-md p-8 fade-in" onClick={e => e.stopPropagation()}>
+                        {/* Icon warning */}
+                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6"
+                            style={{ background: 'rgba(147,0,10,0.2)', border: '1px solid rgba(255,180,171,0.3)' }}>
+                            <span className="material-symbols-outlined text-3xl" style={{ color: '#ffb4ab' }}>warning</span>
+                        </div>
+
+                        <h3 className="font-display font-bold text-xl text-center mb-2" style={{ color: '#dae2fd' }}>
+                            Hapus Akun?
+                        </h3>
+                        <p className="text-sm text-center mb-6" style={{ color: '#8c90a1' }}>
+                            Apakah Anda yakin ingin menghapus akun <strong style={{ color: '#ffb4ab' }}>{user?.email}</strong>?
+                            Tindakan ini tidak dapat dibatalkan dan seluruh data Anda akan hilang permanen.
+                        </p>
+
+                        {deleteError && (
+                            <div className="mb-4 p-3 rounded-xl flex items-start gap-3 fade-in"
+                                style={{ background: 'rgba(147,0,10,0.2)', borderLeft: '3px solid #ffb4ab' }}>
+                                <span className="material-symbols-outlined text-lg shrink-0" style={{ color: '#ffb4ab' }}>report</span>
+                                <p className="text-sm" style={{ color: '#ffb4ab' }}>{deleteError}</p>
+                            </div>
+                        )}
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowDeleteModal(false)}
+                                disabled={deleteLoading}
+                                className="btn-secondary flex-1">
+                                Batal
+                            </button>
+                            <button
+                                onClick={handleDeleteAccount}
+                                disabled={deleteLoading}
+                                className="btn-danger flex-1 justify-center">
+                                {deleteLoading
+                                    ? <><span className="material-symbols-outlined spin">progress_activity</span> Menghapus...</>
+                                    : <><span className="material-symbols-outlined">delete_forever</span> Ya, Hapus</>}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </MainLayout>
     );
 }

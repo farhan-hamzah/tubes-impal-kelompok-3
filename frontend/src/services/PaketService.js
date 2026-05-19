@@ -5,7 +5,6 @@ class PaketService extends BaseService {
 
     // Public / Client
     async getAllPaket()          { return this.get('/paket'); }
-    async getPaketById(id)       { return this.get(`/paket/${id}`); }
 
     // Admin only
     async createPaket(data)      { return this.post('/admin/paket', data); }

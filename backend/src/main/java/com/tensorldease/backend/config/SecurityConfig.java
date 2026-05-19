@@ -26,7 +26,6 @@ public class SecurityConfig implements WebMvcConfigurer {
         return new BCryptPasswordEncoder();
     }
 
-    // Izinkan titik (.) di path variable
     @Override
     public void configurePathMatch(PathMatchConfigurer configurer) {
         configurer.setUseRegisteredSuffixPatternMatch(false);
@@ -35,6 +34,7 @@ public class SecurityConfig implements WebMvcConfigurer {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+            .cors(cors -> cors.configure(http))  // pakai bean CorsConfig yang sudah ada
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))

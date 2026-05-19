@@ -1,0 +1,57 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run Frontend",
+            "type": "shell",
+            "command": "npm run dev",
+            "options": {
+                "cwd": "${workspaceFolder}/frontend"
+            },
+            "problemMatcher": [],
+            "isBackground": true,
+            "presentation": {
+                "group": "tensorldease",
+                "panel": "dedicated",
+                "reveal": "always",
+                "label": "Frontend (Vite)"
+            }
+        },
+        {
+            "label": "Run Backend (Local)",
+            "type": "shell",
+            "command": "$env:SPRING_PROFILES_ACTIVE='local'; .\\mvnw.cmd spring-boot:run",
+            "options": {
+                "cwd": "${workspaceFolder}/backend",
+                "shell": {
+                    "executable": "powershell.exe",
+                    "args": ["-NoProfile", "-Command"]
+                }
+            },
+            "problemMatcher": [],
+            "isBackground": true,
+            "presentation": {
+                "group": "tensorldease",
+                "panel": "dedicated",
+                "reveal": "always",
+                "label": "Backend (Spring Boot)"
+            }
+        },
+        {
+            "label": "🚀 TensorLease - Jalankan Semua",
+            "dependsOn": [
+                "Run Backend (Local)",
+                "Run Frontend"
+            ],
+            "dependsOrder": "parallel",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always"
+            }
+        }
+    ]
+}

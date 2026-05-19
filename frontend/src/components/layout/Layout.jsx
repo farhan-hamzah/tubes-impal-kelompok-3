@@ -8,12 +8,12 @@ import { useAuth } from '../../context/AuthContext';
 export class SidebarConfig {
     static getAdminLinks() {
         return [
-            { name: 'Dashboard',  path: '/admin/dashboard', icon: 'dashboard' },
-            { name: 'Clients',    path: '/admin/clients',   icon: 'group' },
-            { name: 'Packages',   path: '/admin/paket',     icon: 'inventory_2' },
-            { name: 'Contracts',  path: '/admin/kontrak',   icon: 'description' },
-            { name: 'Billing',    path: '/admin/invoice',   icon: 'payments' },
-            { name: 'Reports',    path: '/admin/laporan',   icon: 'assessment' },
+            { name: 'Dasbor',    path: '/admin/dashboard', icon: 'dashboard' },
+            { name: 'Klien',     path: '/admin/clients',   icon: 'group' },
+            { name: 'Paket',     path: '/admin/paket',     icon: 'inventory_2' },
+            { name: 'Kontrak',   path: '/admin/kontrak',   icon: 'description' },
+            { name: 'Tagihan',   path: '/admin/invoice',   icon: 'payments' },
+            { name: 'Laporan',   path: '/admin/laporan',   icon: 'assessment' },
         ];
     }
 
@@ -57,7 +57,7 @@ export function Sidebar({ role }) {
                         {isAdmin ? 'Admin Console' : 'TensorLease'}
                     </p>
                     <p className="text-[10px] uppercase tracking-widest mt-0.5" style={{ color: '#4a4f62' }}>
-                        {isAdmin ? 'HPC Management' : 'Portal Penyewa'}
+                        {isAdmin ? 'Manajemen HPC' : 'Portal Penyewa'}
                     </p>
                 </div>
             </div>
@@ -88,7 +88,7 @@ export function Sidebar({ role }) {
                 </Link>
                 <button onClick={handleLogout} className="nav-link w-full text-left" style={{ color: '#ffb4ab' }}>
                     <span className="material-symbols-outlined text-[20px]">logout</span>
-                    <span>{isAdmin ? 'Sign Out' : 'Keluar'}</span>
+                    <span>Keluar</span>
                 </button>
             </div>
         </aside>
@@ -100,6 +100,7 @@ export function Sidebar({ role }) {
 // ─────────────────────────────────────────────────────────
 export function Topbar({ user, pageTitle }) {
     const [open, setOpen] = useState(false);
+    const [showNotif, setShowNotif] = useState(false);
     const { logoutUser } = useAuth();
     const navigate = useNavigate();
     const isAdmin = user?.role === 'ADMIN';
@@ -122,25 +123,42 @@ export function Topbar({ user, pageTitle }) {
                 ) : (
                     <h1 className="font-display font-bold text-lg text-white">{pageTitle}</h1>
                 )}
-                {/* Search bar */}
-                <div className="hidden lg:flex items-center gap-2 rounded-xl px-4 py-2"
-                    style={{ background: '#131b2e', border: '1px solid rgba(66,70,86,0.3)', minWidth: 260 }}>
-                    <span className="material-symbols-outlined text-[18px]" style={{ color: '#4a4f62' }}>search</span>
-                    <input
-                        type="text"
-                        placeholder={isAdmin ? 'Search clusters, users...' : 'Cari klaster...'}
-                        style={{ background: 'transparent', border: 'none', outline: 'none', fontSize: '0.8125rem', color: '#dae2fd', width: '100%' }}
-                    />
-                </div>
             </div>
 
             {/* Right */}
             <div className="flex items-center gap-2">
-                <button className="w-9 h-9 flex items-center justify-center rounded-xl transition-colors hover:bg-white/5"
-                    style={{ color: '#8c90a1' }}>
-                    <span className="material-symbols-outlined text-[20px]">notifications</span>
-                </button>
-                <button className="w-9 h-9 flex items-center justify-center rounded-xl transition-colors hover:bg-white/5"
+                {/* Notification Button */}
+                <div className="relative">
+                    <button
+                        onClick={() => { setShowNotif(!showNotif); setOpen(false); }}
+                        className="w-9 h-9 flex items-center justify-center rounded-xl transition-colors hover:bg-white/5"
+                        style={{ color: '#8c90a1' }}>
+                        <span className="material-symbols-outlined text-[20px]">notifications</span>
+                    </button>
+                    {showNotif && (
+                        <>
+                            <div className="fixed inset-0 z-40" onClick={() => setShowNotif(false)} />
+                            <div className="absolute right-0 mt-2 w-72 rounded-xl shadow-2xl z-50 py-3 fade-in"
+                                style={{ background: '#171f33', border: '1px solid rgba(66,70,86,0.4)' }}>
+                                <div className="px-4 pb-2 border-b" style={{ borderColor: 'rgba(66,70,86,0.2)' }}>
+                                    <p className="text-sm font-bold" style={{ color: '#dae2fd' }}>
+                                        Notifikasi
+                                    </p>
+                                </div>
+                                <div className="flex flex-col items-center justify-center py-8 gap-2">
+                                    <span className="material-symbols-outlined text-3xl" style={{ color: '#4a4f62' }}>notifications_off</span>
+                                    <p className="text-xs" style={{ color: '#4a4f62' }}>
+                                        Belum ada notifikasi
+                                    </p>
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </div>
+                {/* Settings Button */}
+                <button
+                    onClick={() => navigate('/profile')}
+                    className="w-9 h-9 flex items-center justify-center rounded-xl transition-colors hover:bg-white/5"
                     style={{ color: '#8c90a1' }}>
                     <span className="material-symbols-outlined text-[20px]">settings</span>
                 </button>
@@ -156,7 +174,7 @@ export function Topbar({ user, pageTitle }) {
                                 {user?.nama || user?.username || 'User'}
                             </p>
                             <p className="text-[10px] mt-0.5" style={{ color: '#4cd6ff' }}>
-                                {isAdmin ? 'Administrator' : 'Client'}
+                                {isAdmin ? 'Administrator' : 'Klien'}
                             </p>
                         </div>
                         <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm"
@@ -187,7 +205,7 @@ export function Topbar({ user, pageTitle }) {
                                     className="flex items-center gap-2 px-4 py-2 text-sm w-full text-left transition-colors hover:bg-white/5"
                                     style={{ color: '#ffb4ab' }}>
                                     <span className="material-symbols-outlined text-[18px]">logout</span>
-                                    {isAdmin ? 'Sign Out' : 'Keluar'}
+                                    Keluar
                                 </button>
                             </div>
                         </>
