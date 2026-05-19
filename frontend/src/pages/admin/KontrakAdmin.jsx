@@ -8,10 +8,10 @@ import PaketService from '../../services/PaketService';
 
 const StatusBadge = ({ status }) => {
     const map = {
-        ACTIVE:        { label: 'Aktif',            cls: 'badge-active' },
-        PENDING:       { label: 'Menunggu',         cls: 'badge-pending' },
-        EXPIRED:       { label: 'Kedaluwarsa',      cls: 'badge-expired' },
-        EXPIRING_SOON: { label: 'Segera Berakhir',  cls: 'badge-overdue' },
+        ACTIVE:        { label: 'Aktif',           cls: 'badge-active' },
+        PENDING:       { label: 'Menunggu',        cls: 'badge-pending' },
+        EXPIRED:       { label: 'Kedaluwarsa',     cls: 'badge-expired' },
+        EXPIRING_SOON: { label: 'Segera Berakhir', cls: 'badge-overdue' },
     };
     const { label, cls } = map[status] || { label: status, cls: 'badge-expired' };
     return <span className={`badge ${cls}`}>{label}</span>;
@@ -27,6 +27,7 @@ export default function KontrakAdmin() {
     const [showModal, setShowModal] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
+    const [selectedKontrak, setSelectedKontrak] = useState(null);
     const [form, setForm] = useState({ clientId: '', paketId: '', tanggalMulai: '', durasibulan: '', catatan: '' });
 
     useEffect(() => { fetchAll(); }, []);
@@ -86,7 +87,7 @@ export default function KontrakAdmin() {
     ];
 
     return (
-        <MainLayout pageTitle="Daftar Kontrak">
+        <MainLayout pageTitle="Kontrak">
             <div className="space-y-8">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
@@ -95,7 +96,7 @@ export default function KontrakAdmin() {
                             Kontrak
                         </h1>
                         <p className="text-sm mt-2 max-w-md" style={{ color: '#8c90a1' }}>
-                            Manajemen siklus hidup dan pelacakan komitmen untuk retainer klien.
+                            Manajemen siklus hidup dan pemantauan komitmen layanan klien.
                         </p>
                     </div>
                     <button onClick={() => setShowModal(true)} className="btn-primary">
@@ -110,7 +111,7 @@ export default function KontrakAdmin() {
                     </div>
                 )}
 
-                {/* KPI Row */}
+                {/* KPI */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="kpi-card col-span-2 lg:col-span-2 border-l-4" style={{ borderLeftColor: '#4cd6ff' }}>
                         <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#8c90a1' }}>Total Komitmen</p>
@@ -129,7 +130,7 @@ export default function KontrakAdmin() {
                     </div>
                 </div>
 
-                {/* Filter Tabs */}
+                {/* Filter */}
                 <div className="flex flex-wrap gap-2">
                     {filters.map(({ val, label }) => (
                         <button key={val} onClick={() => handleFilter(val)}
@@ -142,7 +143,7 @@ export default function KontrakAdmin() {
                     ))}
                 </div>
 
-                {/* Table */}
+                {/* Tabel */}
                 <div className="card overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="data-table" style={{ minWidth: 760 }}>
@@ -179,7 +180,12 @@ export default function KontrakAdmin() {
                                             </span>
                                         </td>
                                         <td>
-                                            <button className="text-[10px] font-bold uppercase hover:underline" style={{ color: '#4cd6ff' }}>Detail</button>
+                                            <button
+                                                onClick={() => setSelectedKontrak(k)}
+                                                className="btn-secondary text-xs py-1.5 px-3">
+                                                <span className="material-symbols-outlined text-[15px]">visibility</span>
+                                                Detail
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}
@@ -195,7 +201,57 @@ export default function KontrakAdmin() {
                 </div>
             </div>
 
-            {/* Modal */}
+            {/* Modal Detail Kontrak */}
+            {selectedKontrak && (
+                <div className="modal-overlay">
+                    <div className="modal-box max-w-lg">
+                        <div className="flex justify-between items-center px-6 py-4"
+                            style={{ borderBottom: '1px solid rgba(66,70,86,0.2)' }}>
+                            <div>
+                                <h3 className="font-display font-bold text-lg" style={{ color: '#dae2fd' }}>Detail Kontrak</h3>
+                                <p className="text-xs font-mono mt-0.5" style={{ color: '#4cd6ff' }}>{selectedKontrak.nomorKontrak}</p>
+                            </div>
+                            <button onClick={() => setSelectedKontrak(null)} style={{ color: '#4a4f62' }}>
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div className="flex items-center gap-3 p-3 rounded-xl"
+                                style={{ background: 'rgba(76,214,255,0.08)', border: '1px solid rgba(76,214,255,0.2)' }}>
+                                <StatusBadge status={selectedKontrak.status} />
+                            </div>
+                            <div className="rounded-xl p-4 space-y-3" style={{ background: '#131b2e' }}>
+                                {[
+                                    ['Klien', selectedKontrak.namaClient || '—'],
+                                    ['Paket', selectedKontrak.namaPaket || '—'],
+                                    ['Tanggal Mulai', selectedKontrak.tanggalMulai || '—'],
+                                    ['Tanggal Berakhir', selectedKontrak.tanggalBerakhir || '—'],
+                                    ['Durasi', selectedKontrak.durasibulan ? `${selectedKontrak.durasibulan} bulan` : '—'],
+                                    ['Catatan', selectedKontrak.catatan || '—'],
+                                ].map(([k, v]) => (
+                                    <div key={k} className="flex justify-between text-sm">
+                                        <span style={{ color: '#8c90a1' }}>{k}</span>
+                                        <span className="font-semibold text-right max-w-xs" style={{ color: '#dae2fd' }}>{v}</span>
+                                    </div>
+                                ))}
+                                <div className="h-px" style={{ background: 'rgba(66,70,86,0.3)' }} />
+                                <div className="flex justify-between">
+                                    <span className="font-bold text-sm" style={{ color: '#8c90a1' }}>Total Biaya</span>
+                                    <span className="font-display font-bold text-xl" style={{ color: '#4cd6ff' }}>
+                                        Rp {selectedKontrak.totalBiaya?.toLocaleString('id-ID')}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex justify-end gap-3 px-6 py-4"
+                            style={{ borderTop: '1px solid rgba(66,70,86,0.2)' }}>
+                            <button onClick={() => setSelectedKontrak(null)} className="btn-secondary">Tutup</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Buat Kontrak */}
             {showModal && (
                 <div className="modal-overlay">
                     <div className="modal-box max-w-lg">
@@ -207,10 +263,10 @@ export default function KontrakAdmin() {
                         </div>
                         <form id="kontrakForm" onSubmit={handleSubmit} className="p-6 space-y-4">
                             <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8c90a1' }}>Client</label>
+                                <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8c90a1' }}>Klien</label>
                                 <select className="select" required value={form.clientId}
                                     onChange={e => setForm({ ...form, clientId: e.target.value })}>
-                                    <option value="">Pilih Client</option>
+                                    <option value="">Pilih Klien</option>
                                     {clients.map(c => <option key={c.userId} value={c.userId}>{c.nama}</option>)}
                                 </select>
                             </div>

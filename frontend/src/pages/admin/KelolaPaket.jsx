@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
 import { MainLayout } from '../../components/layout/Layout';
 import PaketService from '../../services/PaketService';
+import KontrakService from '../../services/KontrakService';
 
 
 export default function KelolaPaket() {
     const [pakets, setPakets] = useState([]);
+    const [kontraks, setKontraks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [showModal, setShowModal] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState(null);
     const [editId, setEditId] = useState(null);
     const [form, setForm] = useState({ namaPaket: '', spesifikasiGpu: '', jumlahCpuCore: '', kapasitasRamGb: '', storage: '', jumlahUnit: '', tarif: '', status: 'AKTIF' });
 
@@ -16,10 +19,15 @@ export default function KelolaPaket() {
     const load = async () => {
         setLoading(true);
         try {
-            const data = await PaketService.getAllPaket();
-            setPakets(Array.isArray(data) ? data : []);
+            const [pkts, kons] = await Promise.all([
+                PaketService.getAllPaket(),
+                KontrakService.getAllKontrak(),
+            ]);
+            setPakets(Array.isArray(pkts) ? pkts : []);
+            setKontraks(Array.isArray(kons) ? kons : []);
         } catch {
             setPakets([]);
+            setKontraks([]);
         } finally {
             setLoading(false);
         }
@@ -42,22 +50,33 @@ export default function KelolaPaket() {
         finally { setSubmitting(false); }
     };
 
-    const handleDelete = async id => {
-        if (!window.confirm('Yakin hapus paket ini?')) return;
-        try { await PaketService.deletePaket(id); load(); }
+    const handleDelete = async () => {
+        if (!deleteTarget) return;
+        try { await PaketService.deletePaket(deleteTarget.paketId); load(); }
         catch (err) { alert(err.message); }
+        finally { setDeleteTarget(null); }
     };
 
+    // KPI dari data nyata
+    const paketAktif = pakets.filter(p => p.status === 'AKTIF').length;
+    const kontrakAktif = kontraks.filter(k => k.status === 'ACTIVE').length;
+    const totalUnit = pakets.reduce((s, p) => s + (p.jumlahUnit || 0), 0);
+    const utilisasiPct = totalUnit > 0 ? Math.round((kontrakAktif / totalUnit) * 100) : 0;
+    const proyeksiPendapatan = kontraks
+        .filter(k => k.status === 'ACTIVE')
+        .reduce((s, k) => s + (k.totalBiaya || 0), 0);
+    const rupiah = (n) => n != null ? 'Rp ' + Number(n).toLocaleString('id-ID') : 'Rp –';
+
     const fields = [
-        { name: 'namaPaket', label: 'Nama Paket', icon: 'badge', type: 'text', placeholder: 'H100 Research Node' },
-        { name: 'spesifikasiGpu', label: 'Spesifikasi GPU', icon: 'memory', type: 'text', placeholder: '8x NVIDIA H100 80GB' },
-        { name: 'storage', label: 'Storage', icon: 'hard_drive', type: 'text', placeholder: '2TB NVMe SSD' },
+        { name: 'namaPaket',      label: 'Nama Paket',       icon: 'badge',       type: 'text', placeholder: 'H100 Research Node' },
+        { name: 'spesifikasiGpu', label: 'Spesifikasi GPU',   icon: 'memory',      type: 'text', placeholder: '8x NVIDIA H100 80GB' },
+        { name: 'storage',        label: 'Storage',           icon: 'hard_drive',  type: 'text', placeholder: '2TB NVMe SSD' },
     ];
     const numFields = [
-        { name: 'jumlahCpuCore', label: 'CPU Core', placeholder: '128' },
-        { name: 'kapasitasRamGb', label: 'RAM (GB)', placeholder: '1024' },
-        { name: 'jumlahUnit', label: 'Unit Tersedia', placeholder: '10' },
-        { name: 'tarif', label: 'Tarif (Rp/Bln)', placeholder: '15000000', step: '1000' },
+        { name: 'jumlahCpuCore',  label: 'CPU Core',          placeholder: '128' },
+        { name: 'kapasitasRamGb', label: 'RAM (GB)',           placeholder: '1024' },
+        { name: 'jumlahUnit',     label: 'Unit Tersedia',      placeholder: '10' },
+        { name: 'tarif',          label: 'Tarif (Rp/Bln)',     placeholder: '15000000', step: '1000' },
     ];
 
     return (
@@ -70,34 +89,33 @@ export default function KelolaPaket() {
                             Paket <span style={{ color: '#4cd6ff' }}>Layanan</span>
                         </h1>
                         <p className="text-sm mt-2 max-w-lg" style={{ color: '#8c90a1' }}>
-                            Konfigurasikan beban kerja komputasi tinggi. Tentukan jenis instansi, densitas GPU, dan tingkatan harga.
+                            Konfigurasi beban kerja komputasi tinggi. Tentukan tipe instansi, kepadatan GPU, dan tingkatan harga.
                         </p>
                     </div>
                     <button onClick={openCreate} className="btn-primary">
-                        <span className="material-symbols-outlined">add</span> Paket Baru
+                        <span className="material-symbols-outlined">add</span> Tambah Paket Baru
                     </button>
                 </div>
 
                 {/* KPI */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     {[
-                        { label: 'Total Paket', value: pakets.length, icon: 'inventory_2' },
-                        { label: 'Instansi Aktif', value: '–', icon: 'bolt', delta: null },
-                        { label: 'Utilisasi Rata-rata', value: '–', icon: 'analytics' },
-                        { label: 'Proyeksi Pendapatan', value: '–', icon: 'payments' },
-                    ].map(({ label, value, icon, delta }) => (
+                        { label: 'Total Paket',         value: loading ? '…' : pakets.length,         icon: 'inventory_2' },
+                        { label: 'Paket Aktif',         value: loading ? '…' : paketAktif,            icon: 'bolt' },
+                        { label: 'Utilisasi Rata-rata', value: loading ? '…' : `${utilisasiPct}%`,    icon: 'analytics' },
+                        { label: 'Proyeksi Pendapatan', value: loading ? '…' : rupiah(proyeksiPendapatan), icon: 'payments' },
+                    ].map(({ label, value, icon }) => (
                         <div key={label} className="kpi-card">
                             <div className="absolute top-4 right-4 opacity-10">
                                 <span className="material-symbols-outlined text-5xl" style={{ color: '#4cd6ff' }}>{icon}</span>
                             </div>
                             <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#8c90a1' }}>{label}</p>
                             <p className="font-display text-3xl font-bold" style={{ color: '#dae2fd' }}>{value}</p>
-                            {delta && <p className="text-xs mt-2 font-semibold" style={{ color: '#4cd6ff' }}>{delta} minggu ini</p>}
                         </div>
                     ))}
                 </div>
 
-                {/* Table */}
+                {/* Tabel */}
                 <div className="card overflow-hidden">
                     <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid rgba(66,70,86,0.2)' }}>
                         <h2 className="font-display text-lg font-bold" style={{ color: '#dae2fd' }}>Manajemen Katalog</h2>
@@ -153,14 +171,15 @@ export default function KelolaPaket() {
                                         </td>
                                         <td>
                                             <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
-                                                <button onClick={() => { setEditId(p.paketId); setForm({ namaPaket: p.namaPaket, spesifikasiGpu: p.spesifikasiGpu, jumlahCpuCore: p.jumlahCpuCore, kapasitasRamGb: p.kapasitasRamGb, storage: p.storage, jumlahUnit: p.jumlahUnit, tarif: p.tarif, status: p.status }); setShowModal(true); }}
-                                                    className="p-2 rounded-lg hover:bg-white/5 transition-colors"
-                                                    style={{ color: '#4cd6ff' }}>
+                                                <button onClick={() => {
+                                                    setEditId(p.paketId);
+                                                    setForm({ namaPaket: p.namaPaket, spesifikasiGpu: p.spesifikasiGpu, jumlahCpuCore: p.jumlahCpuCore, kapasitasRamGb: p.kapasitasRamGb, storage: p.storage, jumlahUnit: p.jumlahUnit, tarif: p.tarif, status: p.status });
+                                                    setShowModal(true);
+                                                }} className="p-2 rounded-lg hover:bg-white/5 transition-colors" style={{ color: '#4cd6ff' }}>
                                                     <span className="material-symbols-outlined text-[18px]">edit</span>
                                                 </button>
-                                                <button onClick={() => handleDelete(p.paketId)}
-                                                    className="p-2 rounded-lg hover:bg-red-500/10 transition-colors"
-                                                    style={{ color: '#ffb4ab' }}>
+                                                <button onClick={() => setDeleteTarget(p)}
+                                                    className="p-2 rounded-lg hover:bg-red-500/10 transition-colors" style={{ color: '#ffb4ab' }}>
                                                     <span className="material-symbols-outlined text-[18px]">delete</span>
                                                 </button>
                                             </div>
@@ -173,7 +192,46 @@ export default function KelolaPaket() {
                 </div>
             </div>
 
-            {/* Modal */}
+            {/* Modal Konfirmasi Hapus */}
+            {deleteTarget && (
+                <div className="modal-overlay">
+                    <div className="modal-box max-w-sm">
+                        <div className="flex justify-between items-center px-6 py-4" style={{ borderBottom: '1px solid rgba(66,70,86,0.2)' }}>
+                            <h3 className="font-display font-bold text-lg" style={{ color: '#ffb4ab' }}>Hapus Paket</h3>
+                            <button onClick={() => setDeleteTarget(null)} style={{ color: '#4a4f62' }}>
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div className="flex items-start gap-4 p-4 rounded-xl"
+                                style={{ background: 'rgba(147,0,10,0.15)', border: '1px solid rgba(255,180,171,0.25)' }}>
+                                <span className="material-symbols-outlined text-2xl shrink-0 mt-0.5" style={{ color: '#ffb4ab' }}>warning</span>
+                                <div>
+                                    <p className="font-bold text-sm" style={{ color: '#ffb4ab' }}>Tindakan ini tidak dapat dibatalkan.</p>
+                                    <p className="text-xs mt-1" style={{ color: '#c2c6d8' }}>
+                                        Paket <strong style={{ color: '#dae2fd' }}>"{deleteTarget.namaPaket}"</strong> akan dihapus secara permanen.
+                                        Kontrak aktif yang terhubung dengan paket ini mungkin akan terpengaruh.
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="rounded-xl p-3" style={{ background: '#131b2e' }}>
+                                <p className="text-xs" style={{ color: '#8c90a1' }}>ID Paket: <span className="font-mono" style={{ color: '#4cd6ff' }}>{deleteTarget.paketId}</span></p>
+                            </div>
+                        </div>
+                        <div className="flex justify-end gap-3 px-6 py-4" style={{ borderTop: '1px solid rgba(66,70,86,0.2)' }}>
+                            <button onClick={() => setDeleteTarget(null)} className="btn-secondary">Batal</button>
+                            <button onClick={handleDelete}
+                                className="px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2"
+                                style={{ background: 'rgba(147,0,10,0.3)', color: '#ffb4ab', border: '1px solid rgba(255,180,171,0.3)' }}>
+                                <span className="material-symbols-outlined text-[18px]">delete_forever</span>
+                                Hapus Paket
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Tambah / Edit Paket */}
             {showModal && (
                 <div className="modal-overlay">
                     <div className="modal-box max-w-lg">
@@ -211,7 +269,9 @@ export default function KelolaPaket() {
                         <div className="flex justify-end gap-3 px-6 py-4" style={{ borderTop: '1px solid rgba(66,70,86,0.2)' }}>
                             <button onClick={() => setShowModal(false)} className="btn-secondary">Batal</button>
                             <button type="submit" form="paketForm" disabled={submitting} className="btn-primary">
-                                {submitting ? <><span className="material-symbols-outlined spin text-lg">sync</span> Menyimpan...</> : <><span className="material-symbols-outlined text-lg">save</span> Simpan</>}
+                                {submitting
+                                    ? <><span className="material-symbols-outlined spin text-lg">sync</span> Menyimpan...</>
+                                    : <><span className="material-symbols-outlined text-lg">save</span> Simpan</>}
                             </button>
                         </div>
                     </div>

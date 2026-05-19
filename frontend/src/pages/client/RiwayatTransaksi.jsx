@@ -13,65 +13,7 @@ const tgl = (d) => {
     return new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 };
 
-// ── Mock invoice data (demo / no backend) ────────────────────────
-const MOCK_INVOICES = [
-    {
-        invoiceId: 'INV-001',
-        nomorInvoice: 'INV-2024-001',
-        nomorKontrak: 'KTR-2024-001',
-        namaPaket: 'H100 Research Node',
-        tagihanMulai: '2024-01-01',
-        tagihanAkhir: '2024-01-31',
-        tanggalJatuhTempo: '2024-02-10',
-        tanggalBayar: '2024-02-08',
-        jumlahTagihan: 45000000,
-        statusPembayaran: 'PAID',
-        buktiPembayaran: null,
-        metodePembayaran: 'Transfer Bank BCA',
-    },
-    {
-        invoiceId: 'INV-002',
-        nomorInvoice: 'INV-2024-002',
-        nomorKontrak: 'KTR-2024-001',
-        namaPaket: 'H100 Research Node',
-        tagihanMulai: '2024-02-01',
-        tagihanAkhir: '2024-02-29',
-        tanggalJatuhTempo: '2024-03-10',
-        tanggalBayar: '2024-03-05',
-        jumlahTagihan: 45000000,
-        statusPembayaran: 'PAID',
-        buktiPembayaran: null,
-        metodePembayaran: 'Transfer Bank Mandiri',
-    },
-    {
-        invoiceId: 'INV-003',
-        nomorInvoice: 'INV-2024-003',
-        nomorKontrak: 'KTR-2024-001',
-        namaPaket: 'H100 Research Node',
-        tagihanMulai: '2024-03-01',
-        tagihanAkhir: '2024-03-31',
-        tanggalJatuhTempo: '2024-04-10',
-        tanggalBayar: null,
-        jumlahTagihan: 45000000,
-        statusPembayaran: 'UNPAID',
-        buktiPembayaran: null,
-        metodePembayaran: null,
-    },
-    {
-        invoiceId: 'INV-004',
-        nomorInvoice: 'INV-2024-004',
-        nomorKontrak: 'KTR-2024-002',
-        namaPaket: 'RTX Pro Studio',
-        tagihanMulai: '2024-03-01',
-        tagihanAkhir: '2024-03-31',
-        tanggalJatuhTempo: '2024-03-20',
-        tanggalBayar: null,
-        jumlahTagihan: 12000000,
-        statusPembayaran: 'OVERDUE',
-        buktiPembayaran: null,
-        metodePembayaran: null,
-    },
-];
+
 
 const STATUS_CONFIG = {
     PAID:    { label: 'Lunas',        bg: 'rgba(76,214,255,0.12)',  color: '#4cd6ff',  icon: 'check_circle' },
@@ -124,19 +66,18 @@ export default function RiwayatTransaksi() {
     const [doneMsg, setDoneMsg]       = useState('');
 
     useEffect(() => {
-        loadSnapScript();
         load();
     }, [user]);
 
     const load = async () => {
         setLoading(true);
         try {
-            const data = user?.clientId && user.clientId !== 'CLIENT-001'
+            const data = user?.clientId
                 ? await invoiceService.getInvoiceByClient(user.clientId)
                 : null;
-            setInvoices(data && data.length > 0 ? data : MOCK_INVOICES);
+            setInvoices(Array.isArray(data) ? data : []);
         } catch {
-            setInvoices(MOCK_INVOICES);
+            setInvoices([]);
         } finally {
             setLoading(false);
         }
@@ -164,7 +105,7 @@ export default function RiwayatTransaksi() {
         if (!buktiFile) return;
         setSubmitting(true);
         try {
-            if (user?.clientId && user.clientId !== 'CLIENT-001') {
+            if (user?.clientId) {
                 const reader = new FileReader();
                 reader.onloadend = async () => {
                     const base64 = reader.result.split(',')[1];
@@ -173,8 +114,6 @@ export default function RiwayatTransaksi() {
                 };
                 reader.readAsDataURL(buktiFile);
             } else {
-                // Demo mode
-                await new Promise(r => setTimeout(r, 800));
                 finalizeManual();
             }
         } catch (err) {
@@ -195,6 +134,8 @@ export default function RiwayatTransaksi() {
     const handleMidtrans = async () => {
         setSnapLoading(true);
         setSnapError('');
+        // Load Midtrans script on demand (only when user actually pays via Midtrans)
+        loadSnapScript();
         try {
             // Request snap token dari backend
             const res = await paymentService.getSnapToken(payModal.invoiceId);
@@ -209,7 +150,7 @@ export default function RiwayatTransaksi() {
                     // Di frontend, update optimis langsung
                     setInvoices(prev => prev.map(inv =>
                         inv.invoiceId === payModal.invoiceId
-                            ? { ...inv, statusPembayaran: 'PAID', metodePembayaran: 'Midtrans', tanggalBayar: new Date().toISOString().split('T')[0] }
+                            ? { ...inv, statusPembayaran: 'PAID', metodePembayaran: 'Midtrans', tanggalPembayaran: new Date().toISOString().split('T')[0] }
                             : inv
                     ));
                     setDoneMsg('Pembayaran berhasil! Status invoice diperbarui otomatis.');
@@ -326,12 +267,12 @@ export default function RiwayatTransaksi() {
                                     return (
                                         <tr key={inv.invoiceId}>
                                             <td>
-                                                <p className="font-mono text-xs font-bold" style={{ color: '#4cd6ff' }}>{inv.nomorInvoice}</p>
-                                                <p className="text-[10px] mt-0.5" style={{ color: '#4a4f62' }}>{inv.nomorKontrak}</p>
+                                                <p className="font-mono text-xs font-bold" style={{ color: '#4cd6ff' }}>{inv.nomorInvoice || '–'}</p>
+                                                <p className="text-[10px] mt-0.5" style={{ color: '#4a4f62' }}>{inv.nomorKontrak || '–'}</p>
                                             </td>
                                             <td>
                                                 <p className="font-semibold text-sm" style={{ color: '#dae2fd' }}>
-                                                    {inv.namaPaket || 'Paket Layanan'}
+                                                    {inv.namaPaket || inv.nomorKontrak || '–'}
                                                 </p>
                                             </td>
                                             <td>
@@ -404,8 +345,8 @@ export default function RiwayatTransaksi() {
                                         <span className="material-symbols-outlined text-2xl" style={{ color: sc.color }}>{sc.icon}</span>
                                         <div>
                                             <p className="font-bold text-sm" style={{ color: sc.color }}>{sc.label}</p>
-                                            {selected.tanggalBayar && (
-                                                <p className="text-xs" style={{ color: '#8c90a1' }}>Dibayar: {tgl(selected.tanggalBayar)}</p>
+                                            {selected.tanggalPembayaran && (
+                                                <p className="text-xs" style={{ color: '#8c90a1' }}>Dibayar: {tgl(selected.tanggalPembayaran)}</p>
                                             )}
                                         </div>
                                     </div>
@@ -414,7 +355,7 @@ export default function RiwayatTransaksi() {
                             <div className="rounded-xl p-4 space-y-3" style={{ background: '#131b2e' }}>
                                 {[
                                     ['No. Kontrak', selected.nomorKontrak],
-                                    ['Paket Layanan', selected.namaPaket || 'Paket Layanan'],
+                                    ['Paket Layanan', selected.namaPaket || selected.nomorKontrak || '–'],
                                     ['Periode Tagihan', `${tgl(selected.tagihanMulai)} – ${tgl(selected.tagihanAkhir)}`],
                                     ['Jatuh Tempo', tgl(selected.tanggalJatuhTempo)],
                                     ['Metode Bayar', selected.metodePembayaran || '–'],

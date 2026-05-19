@@ -148,7 +148,7 @@ export default function InvoiceAdmin() {
                         <table className="data-table" style={{ minWidth: 900 }}>
                             <thead>
                                 <tr>
-                                    {['No. Invoice', 'Client', 'Kontrak', 'Periode', 'Jumlah', 'Jatuh Tempo', 'Status', 'Bukti', ''].map(h => (
+                                    {['No. Invoice', 'Klien', 'Kontrak', 'Periode', 'Jumlah', 'Jatuh Tempo', 'Status', 'Bukti', ''].map(h => (
                                         <th key={h}>{h}</th>
                                     ))}
                                 </tr>

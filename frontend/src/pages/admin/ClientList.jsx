@@ -7,6 +7,11 @@ export default function ClientList() {
     const [clients, setClients] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
+    const [selectedClient, setSelectedClient] = useState(null);
+
+    // State pengurutan
+    const [sortField, setSortField] = useState('nama');
+    const [sortDir, setSortDir] = useState('asc');
 
     useEffect(() => { load(); }, []);
 
@@ -22,13 +27,31 @@ export default function ClientList() {
         }
     };
 
-    const filtered = clients.filter(c =>
-        c.nama?.toLowerCase().includes(search.toLowerCase()) ||
-        c.email?.toLowerCase().includes(search.toLowerCase())
-    );
+    const toggleSort = (field) => {
+        if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+        else { setSortField(field); setSortDir('asc'); }
+    };
+
+    const SortIcon = ({ field }) => {
+        if (sortField !== field) return <span className="material-symbols-outlined text-[14px]" style={{ color: '#4a4f62' }}>unfold_more</span>;
+        return <span className="material-symbols-outlined text-[14px]" style={{ color: '#4cd6ff' }}>{sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward'}</span>;
+    };
+
+    const filtered = clients
+        .filter(c =>
+            c.nama?.toLowerCase().includes(search.toLowerCase()) ||
+            c.email?.toLowerCase().includes(search.toLowerCase())
+        )
+        .sort((a, b) => {
+            let va = a[sortField] ?? '';
+            let vb = b[sortField] ?? '';
+            if (sortField === 'isActive') { va = a.isActive !== false ? 1 : 0; vb = b.isActive !== false ? 1 : 0; }
+            const cmp = String(va).localeCompare(String(vb), undefined, { numeric: true });
+            return sortDir === 'asc' ? cmp : -cmp;
+        });
 
     return (
-        <MainLayout pageTitle="Manajemen Client">
+        <MainLayout pageTitle="Manajemen Klien">
             <div className="space-y-8">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -37,7 +60,7 @@ export default function ClientList() {
                             Manajemen <span style={{ color: '#4cd6ff' }}>Klien</span>
                         </h1>
                         <p className="text-sm mt-2 max-w-xl" style={{ color: '#8c90a1' }}>
-                            Pantau alokasi sumber daya, kesehatan kontrak, dan kinerja klien di seluruh klaster.
+                            Pantau alokasi sumber daya, kesehatan kontrak, dan performa klien di seluruh klaster.
                         </p>
                     </div>
                     <button className="btn-primary">
@@ -45,26 +68,24 @@ export default function ClientList() {
                     </button>
                 </div>
 
-                {/* Snapshot KPIs */}
+                {/* KPI Snapshot */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {[
-                        { icon: 'monitoring', label: 'Utilisasi Global', value: '–', badge: null, badgeColor: '#4cd6ff', sub: null },
-                        { icon: 'account_balance', label: 'Proyeksi ARR', value: '–', badge: null, badgeColor: '#4cd6ff', sub: null },
-                        { icon: 'security', label: 'Insiden Terbuka', value: '–', badge: null, badgeColor: '#ffb59d', sub: null },
-                    ].map(({ icon, label, value, badge, badgeColor, sub }) => (
+                        { icon: 'monitoring', label: 'Utilisasi Global', value: '–' },
+                        { icon: 'account_balance', label: 'Proyeksi ARR', value: '–' },
+                        { icon: 'security', label: 'Insiden Terbuka', value: '–' },
+                    ].map(({ icon, label, value }) => (
                         <div key={label} className="kpi-card">
                             <div className="flex justify-between items-start mb-4">
                                 <span className="material-symbols-outlined" style={{ color: '#4cd6ff' }}>{icon}</span>
-                                {badge && <span className="badge" style={{ background: `${badgeColor}18`, color: badgeColor }}>{badge}</span>}
                             </div>
                             <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: '#8c90a1' }}>{label}</p>
                             <p className="font-display text-4xl font-extrabold" style={{ color: '#dae2fd' }}>{value}</p>
-                            {sub && <p className="text-[10px] mt-3 leading-tight" style={{ color: '#4a4f62' }}>{sub}</p>}
                         </div>
                     ))}
                 </div>
 
-                {/* Table Controls */}
+                {/* Kontrol Tabel */}
                 <div className="flex flex-col md:flex-row gap-4 items-center justify-between p-4 rounded-xl"
                     style={{ background: '#131b2e', border: '1px solid rgba(66,70,86,0.2)' }}>
                     <div className="flex flex-1 gap-3 w-full md:w-auto">
@@ -92,15 +113,30 @@ export default function ClientList() {
                     </div>
                 </div>
 
-                {/* Table */}
+                {/* Tabel */}
                 <div className="card overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="data-table">
                             <thead>
                                 <tr>
-                                    {['Nama Klien', 'Kontak', 'Status', 'Kontrak', 'Beban Komputasi', ''].map(h => (
-                                        <th key={h}>{h}</th>
-                                    ))}
+                                    <th>
+                                        <button onClick={() => toggleSort('nama')} className="flex items-center gap-1 hover:opacity-80">
+                                            Nama Klien <SortIcon field="nama" />
+                                        </button>
+                                    </th>
+                                    <th>
+                                        <button onClick={() => toggleSort('email')} className="flex items-center gap-1 hover:opacity-80">
+                                            Kontak <SortIcon field="email" />
+                                        </button>
+                                    </th>
+                                    <th>
+                                        <button onClick={() => toggleSort('isActive')} className="flex items-center gap-1 hover:opacity-80">
+                                            Status <SortIcon field="isActive" />
+                                        </button>
+                                    </th>
+                                    <th>Kontrak</th>
+                                    <th>Beban Komputasi</th>
+                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -109,7 +145,7 @@ export default function ClientList() {
                                 ) : filtered.length === 0 ? (
                                     <tr><td colSpan={6} className="text-center py-12" style={{ color: '#4a4f62' }}>Tidak ada klien ditemukan.</td></tr>
                                 ) : filtered.map((c, i) => {
-                                    const load = (i % 5 + 1) * 15;
+                                    const beban = (i % 5 + 1) * 15;
                                     return (
                                         <tr key={c.userId || i} className="group">
                                             <td>
@@ -143,12 +179,16 @@ export default function ClientList() {
                                             </td>
                                             <td>
                                                 <div className="progress-bar max-w-28">
-                                                    <div className="progress-fill" style={{ width: `${load}%` }} />
+                                                    <div className="progress-fill" style={{ width: `${beban}%` }} />
                                                 </div>
-                                                <p className="text-[10px] mt-1" style={{ color: '#4a4f62' }}>{load}% kapasitas</p>
+                                                <p className="text-[10px] mt-1" style={{ color: '#4a4f62' }}>{beban}% kapasitas</p>
                                             </td>
                                             <td>
-                                                <button className="btn-secondary text-xs py-1.5 px-3">Lihat Detail</button>
+                                                <button
+                                                    onClick={() => setSelectedClient(c)}
+                                                    className="btn-secondary text-xs py-1.5 px-3">
+                                                    Lihat Detail
+                                                </button>
                                             </td>
                                         </tr>
                                     );
@@ -170,6 +210,58 @@ export default function ClientList() {
                     )}
                 </div>
             </div>
+
+            {/* Modal Detail Klien */}
+            {selectedClient && (
+                <div className="modal-overlay">
+                    <div className="modal-box max-w-lg">
+                        <div className="flex justify-between items-center px-6 py-4"
+                            style={{ borderBottom: '1px solid rgba(66,70,86,0.2)' }}>
+                            <div>
+                                <h3 className="font-display font-bold text-lg" style={{ color: '#dae2fd' }}>Detail Klien</h3>
+                                <p className="text-xs font-mono mt-0.5" style={{ color: '#4cd6ff' }}>
+                                    CLI-{String(selectedClient.userId).padStart(3, '0')}
+                                </p>
+                            </div>
+                            <button onClick={() => setSelectedClient(null)} style={{ color: '#4a4f62' }}>
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div className="flex items-center gap-4">
+                                <div className="w-16 h-16 rounded-2xl flex items-center justify-center font-bold text-2xl shrink-0"
+                                    style={{ background: 'rgba(76,214,255,0.1)', color: '#4cd6ff', border: '1px solid rgba(76,214,255,0.2)' }}>
+                                    {selectedClient.nama?.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <p className="font-display font-bold text-xl" style={{ color: '#dae2fd' }}>{selectedClient.nama}</p>
+                                    <span className={`badge mt-1 ${selectedClient.isActive !== false ? 'badge-active' : 'badge-expired'}`}>
+                                        {selectedClient.isActive !== false ? 'Aktif' : 'Tidak Aktif'}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="rounded-xl p-4 space-y-3" style={{ background: '#131b2e' }}>
+                                {[
+                                    ['Email', selectedClient.email || '—'],
+                                    ['Telepon', selectedClient.nomorTelepon || '—'],
+                                    ['Perusahaan', selectedClient.perusahaan || '—'],
+                                    ['ID Pengguna', selectedClient.userId || '—'],
+                                    ['Peran', selectedClient.role || '—'],
+                                ].map(([k, v]) => (
+                                    <div key={k} className="flex justify-between text-sm">
+                                        <span style={{ color: '#8c90a1' }}>{k}</span>
+                                        <span className="font-semibold text-right max-w-xs" style={{ color: '#dae2fd' }}>{v}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="flex justify-end gap-3 px-6 py-4"
+                            style={{ borderTop: '1px solid rgba(66,70,86,0.2)' }}>
+                            <button onClick={() => setSelectedClient(null)} className="btn-secondary">Tutup</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </MainLayout>
     );
 }

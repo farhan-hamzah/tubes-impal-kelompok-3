@@ -5,6 +5,31 @@ import { useAuth } from '../../context/AuthContext';
 import { invoiceService } from '../../services/InvoiceService';
 import kontrakService from '../../services/KontrakService';
 import userService from '../../services/UserService';
+import PaketService from '../../services/PaketService';
+
+// Helper: compute last-6-month revenue bars from invoices
+const computeMonthlyRevenue = (invoices) => {
+    const now = new Date();
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        months.push({
+            label: d.toLocaleDateString('en-US', { month: 'short' }),
+            month: d.getMonth(),
+            year: d.getFullYear(),
+            total: 0,
+        });
+    }
+    (Array.isArray(invoices) ? invoices : [])
+        .filter(inv => inv.statusPembayaran === 'PAID')
+        .forEach(inv => {
+            const d = new Date(inv.tanggalBayar || inv.tagihanMulai);
+            const m = months.find(mo => mo.month === d.getMonth() && mo.year === d.getFullYear());
+            if (m) m.total += (inv.jumlahTagihan || 0);
+        });
+    const max = Math.max(...months.map(m => m.total), 1);
+    return months.map(m => [m.label, Math.max(4, Math.round((m.total / max) * 100))]);
+};
 
 // ── Reusable sub-components ──────────────────────────────
 const KpiCard = ({ label, value, delta, icon, accent }) => (
@@ -32,29 +57,39 @@ const ResourceBar = ({ label, value, color }) => (
         <div className="progress-bar">
             <div className="progress-fill" style={{ width: `${value}%`, background: color }} />
         </div>
+        <p className="text-[9px] uppercase tracking-wider" style={{ color: '#4a4f62' }}>Simulated</p>
     </div>
 );
 
 // ── Main Component ───────────────────────────────────────
 export default function AdminDashboard() {
     const { user } = useAuth();
-    const [stats, setStats] = useState({ invoices: '-', contracts: '-', clients: '-' });
+    const [stats, setStats] = useState({ invoices: '-', contracts: '-', clients: '-', gpuUnits: '-' });
+    const [revenueChart, setRevenueChart] = useState([]);
+    const [recentKontraks, setRecentKontraks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const [invoices, contracts, clients] = await Promise.all([
+                const [invoices, contracts, clients, pakets] = await Promise.all([
                     invoiceService.getAllInvoice(),
                     kontrakService.getAllKontrak(),
                     userService.getAllClients(),
+                    PaketService.getAllPaket(),
                 ]);
+                const totalGpu = Array.isArray(pakets)
+                    ? pakets.filter(p => p.status === 'AKTIF').reduce((s, p) => s + (p.jumlahUnit || 0), 0)
+                    : 0;
                 setStats({
                     invoices: Array.isArray(invoices) ? invoices.length : '-',
                     contracts: Array.isArray(contracts) ? contracts.length : '-',
                     clients: Array.isArray(clients) ? clients.length : '-',
+                    gpuUnits: totalGpu,
                 });
+                setRevenueChart(computeMonthlyRevenue(invoices));
+                setRecentKontraks(Array.isArray(contracts) ? contracts.slice(-3).reverse() : []);
             } catch (err) {
                 setError(err.message || 'Gagal memuat data dashboard.');
             } finally {
@@ -71,19 +106,19 @@ export default function AdminDashboard() {
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                     <div>
                         <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#4cd6ff' }}>
-                            Dashboard / Overview
+                            Dasbor / Ikhtisar
                         </p>
-                        <h1 className="font-display text-4xl md:text-5xl font-black" style={{ color: '#dae2fd' }}>System Pulse</h1>
+                        <h1 className="font-display text-4xl md:text-5xl font-black" style={{ color: '#dae2fd' }}>Sistem Terpusat</h1>
                         <p className="text-sm mt-2 max-w-xl" style={{ color: '#8c90a1' }}>
-                            Real-time telemetry dan resource orchestration untuk klaster HPC Anda.
+                            Telemetri real-time dan orkestrasi sumber daya untuk klaster HPC Anda.
                         </p>
                     </div>
                     <div className="flex gap-3">
                         <button className="btn-secondary">
-                            <span className="material-symbols-outlined text-[18px]">download</span> Export Logs
+                            <span className="material-symbols-outlined text-[18px]">download</span> Ekspor Log
                         </button>
                         <Link to="/admin/paket" className="btn-primary">
-                            <span className="material-symbols-outlined text-[18px]">add</span> New Cluster
+                            <span className="material-symbols-outlined text-[18px]">add</span> Klaster Baru
                         </Link>
                     </div>
                 </div>
@@ -97,19 +132,21 @@ export default function AdminDashboard() {
                     </div>
                 )}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <KpiCard label="Total Clients" value={loading ? '…' : stats.clients} icon="groups" accent="#4cd6ff" />
-                    <KpiCard label="Active Contracts" value={loading ? '…' : stats.contracts} icon="description" accent="#cdbdff" />
-                    <KpiCard label="Total Invoices" value={loading ? '…' : stats.invoices} icon="payments" accent="#4cd6ff" />
+                    <KpiCard label="Total Klien" value={loading ? '…' : stats.clients} icon="groups" accent="#4cd6ff" />
+                    <KpiCard label="Kontrak Aktif" value={loading ? '…' : stats.contracts} icon="description" accent="#cdbdff" />
+                    <KpiCard label="Total Invoice" value={loading ? '…' : stats.invoices} icon="payments" accent="#4cd6ff" />
                     <div className="kpi-card" style={{ border: '1px solid rgba(76,214,255,0.2)' }}>
                         <div className="absolute top-4 right-4 opacity-15">
                             <span className="material-symbols-outlined text-5xl" style={{ color: '#4cd6ff' }}>memory</span>
                         </div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#4cd6ff' }}>GPU Units Available</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#4cd6ff' }}>Unit GPU Tersedia</p>
                         <div className="flex items-baseline gap-2">
-                            <h3 className="font-display text-3xl font-bold" style={{ color: '#dae2fd' }}>–</h3>
+                            <h3 className="font-display text-3xl font-bold" style={{ color: '#dae2fd' }}>
+                                {loading ? '…' : stats.gpuUnits}
+                            </h3>
                         </div>
                         <div className="progress-bar mt-4">
-                            <div className="progress-fill" style={{ width: '0%' }} />
+                            <div className="progress-fill" style={{ width: stats.gpuUnits === '-' || stats.gpuUnits === 0 ? '0%' : '100%' }} />
                         </div>
                     </div>
                 </div>
@@ -120,16 +157,24 @@ export default function AdminDashboard() {
                     <div className="lg:col-span-2 card p-6">
                         <div className="flex items-center justify-between mb-6">
                             <div>
-                                <h4 className="font-display text-lg font-bold" style={{ color: '#dae2fd' }}>Revenue Performance</h4>
-                                <p className="text-xs mt-1" style={{ color: '#8c90a1' }}>Total revenue accrued over the last 30 days</p>
+                                <h4 className="font-display text-lg font-bold" style={{ color: '#dae2fd' }}>Performa Pendapatan</h4>
+                                <p className="text-xs mt-1" style={{ color: '#8c90a1' }}>Total pendapatan 30 hari terakhir</p>
                             </div>
                             <select className="select" style={{ width: 'auto', padding: '0.4rem 2rem 0.4rem 0.75rem', fontSize: '0.75rem' }}>
-                                <option>Last 30 Days</option>
-                                <option>Last 90 Days</option>
+                                <option>30 Hari Terakhir</option>
+                                <option>90 Hari Terakhir</option>
                             </select>
                         </div>
                         <div className="h-52 flex items-end gap-2 px-2">
-                            {[['WK1', 40], ['WK2', 55], ['WK3', 78], ['WK4', 65], ['WK5', 90], ['WK6', 72], ['WK7', 88]].map(([label, h]) => (
+                            {loading ? (
+                                <div className="flex-1 flex items-center justify-center">
+                                    <span className="material-symbols-outlined spin text-3xl" style={{ color: '#4cd6ff' }}>sync</span>
+                                </div>
+                            ) : revenueChart.length === 0 ? (
+                                <div className="flex-1 flex items-center justify-center">
+                                    <p className="text-sm" style={{ color: '#4a4f62' }}>Belum ada data pendapatan.</p>
+                                </div>
+                            ) : revenueChart.map(([label, h]) => (
                                 <div key={label} className="flex-1 flex flex-col items-center gap-2 group">
                                     <div className="w-full rounded-t-md transition-all duration-300"
                                         style={{ height: `${h}%`, background: 'rgba(76,214,255,0.2)' }}
@@ -145,27 +190,47 @@ export default function AdminDashboard() {
                     <div className="card p-6 flex flex-col items-center justify-center text-center">
                         <h4 className="font-display text-lg font-bold mb-1" style={{ color: '#dae2fd' }}>GPU Fleet Status</h4>
                         <p className="text-xs mb-6" style={{ color: '#8c90a1' }}>Real-time resource allocation</p>
-                        <div className="relative w-40 h-40 mb-6">
-                            <svg className="w-full h-full -rotate-90" viewBox="0 0 160 160">
-                                <circle cx="80" cy="80" r="64" fill="transparent" stroke="#222a3d" strokeWidth="12" />
-                                <circle cx="80" cy="80" r="64" fill="transparent" stroke="#4cd6ff" strokeWidth="12"
-                                    strokeDasharray="402" strokeDashoffset="60" strokeLinecap="round" />
-                            </svg>
-                            <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                <span className="font-display text-3xl font-black" style={{ color: '#dae2fd' }}>85%</span>
-                                <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#4cd6ff' }}>Active</span>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3 w-full">
-                            <div className="rounded-xl p-3 text-left" style={{ background: '#222a3d', borderLeft: '2px solid #4cd6ff' }}>
-                                <p className="text-[9px] uppercase font-bold" style={{ color: '#4a4f62' }}>Occupied</p>
-                                <p className="font-bold text-lg" style={{ color: '#dae2fd' }}>85 Units</p>
-                            </div>
-                            <div className="rounded-xl p-3 text-left" style={{ background: '#222a3d', borderLeft: '2px solid #424656' }}>
-                                <p className="text-[9px] uppercase font-bold" style={{ color: '#4a4f62' }}>Idle</p>
-                                <p className="font-bold text-lg" style={{ color: '#dae2fd' }}>15 Units</p>
-                            </div>
-                        </div>
+                        {(() => {
+                            const gpuTotal = typeof stats.gpuUnits === 'number' && stats.gpuUnits > 0 ? stats.gpuUnits : 0;
+                            const occupied = typeof stats.contracts === 'number' ? Math.min(stats.contracts, gpuTotal) : 0;
+                            const idle     = Math.max(gpuTotal - occupied, 0);
+                            const pct      = gpuTotal > 0 ? Math.round((occupied / gpuTotal) * 100) : 0;
+                            const circumference = 2 * Math.PI * 64; // r=64
+                            const dashOffset = circumference - (pct / 100) * circumference;
+                            return (
+                                <>
+                                    <div className="relative w-40 h-40 mb-6">
+                                        <svg className="w-full h-full -rotate-90" viewBox="0 0 160 160">
+                                            <circle cx="80" cy="80" r="64" fill="transparent" stroke="#222a3d" strokeWidth="12" />
+                                            <circle cx="80" cy="80" r="64" fill="transparent" stroke="#4cd6ff" strokeWidth="12"
+                                                strokeDasharray={circumference}
+                                                strokeDashoffset={loading ? circumference : dashOffset}
+                                                strokeLinecap="round" />
+                                        </svg>
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                            <span className="font-display text-3xl font-black" style={{ color: '#dae2fd' }}>
+                                                {loading ? '…' : `${pct}%`}
+                                            </span>
+                                            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#4cd6ff' }}>Active</span>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3 w-full">
+                                        <div className="rounded-xl p-3 text-left" style={{ background: '#222a3d', borderLeft: '2px solid #4cd6ff' }}>
+                                            <p className="text-[9px] uppercase font-bold" style={{ color: '#4a4f62' }}>Occupied</p>
+                                            <p className="font-bold text-lg" style={{ color: '#dae2fd' }}>
+                                                {loading ? '…' : `${occupied} Units`}
+                                            </p>
+                                        </div>
+                                        <div className="rounded-xl p-3 text-left" style={{ background: '#222a3d', borderLeft: '2px solid #424656' }}>
+                                            <p className="text-[9px] uppercase font-bold" style={{ color: '#4a4f62' }}>Idle</p>
+                                            <p className="font-bold text-lg" style={{ color: '#dae2fd' }}>
+                                                {loading ? '…' : `${idle} Units`}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </>
+                            );
+                        })()}
                     </div>
                 </div>
 
@@ -186,22 +251,38 @@ export default function AdminDashboard() {
                             <span className="material-symbols-outlined cursor-pointer" style={{ color: '#4a4f62' }}>more_vert</span>
                         </div>
                         <div className="space-y-4">
-                            {[
-                                { icon: 'cloud_done', color: '#4cd6ff', bg: 'rgba(76,214,255,0.1)', title: 'New Cluster Instance: A-100-Nodes-04', sub: 'Deployed to West-US-2 by admin', time: '2m ago' },
-                                { icon: 'warning', color: '#ffb59d', bg: 'rgba(255,181,157,0.1)', title: 'Resource Warning: High Memory', sub: 'Node-09 has reached 92% capacity', time: '14m ago' },
-                                { icon: 'person_add', color: '#cdbdff', bg: 'rgba(205,189,255,0.1)', title: 'New Client Onboarding', sub: 'DeepLearn AI provisioned 20 H100 units', time: '1h ago' },
-                            ].map(({ icon, color, bg, title, sub, time }, i) => (
-                                <div key={i} className={`flex gap-4 items-start ${i < 2 ? 'pb-4' : ''}`}
-                                    style={i < 2 ? { borderBottom: '1px solid rgba(66,70,86,0.15)' } : {}}>
+                            {loading ? (
+                                <div className="flex items-center justify-center py-8">
+                                    <span className="material-symbols-outlined spin text-2xl" style={{ color: '#4cd6ff' }}>sync</span>
+                                </div>
+                            ) : recentKontraks.length === 0 ? (
+                                <p className="text-sm text-center py-8" style={{ color: '#4a4f62' }}>Belum ada kontrak.</p>
+                            ) : recentKontraks.map((k, i) => (
+                                <div key={k.kontrakId || i}
+                                    className={`flex gap-4 items-start ${i < recentKontraks.length - 1 ? 'pb-4' : ''}`}
+                                    style={i < recentKontraks.length - 1 ? { borderBottom: '1px solid rgba(66,70,86,0.15)' } : {}}>
                                     <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                                        style={{ background: bg }}>
-                                        <span className="material-symbols-outlined text-lg" style={{ color }}>{icon}</span>
+                                        style={{ background: k.status === 'ACTIVE' ? 'rgba(76,214,255,0.1)' : k.status === 'EXPIRED' ? 'rgba(255,180,171,0.1)' : 'rgba(205,189,255,0.1)' }}>
+                                        <span className="material-symbols-outlined text-lg"
+                                            style={{ color: k.status === 'ACTIVE' ? '#4cd6ff' : k.status === 'EXPIRED' ? '#ffb4ab' : '#cdbdff' }}>
+                                            {k.status === 'ACTIVE' ? 'description' : k.status === 'EXPIRED' ? 'cancel' : 'pending'}
+                                        </span>
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium truncate" style={{ color: '#dae2fd' }}>{title}</p>
-                                        <p className="text-xs mt-0.5" style={{ color: '#8c90a1' }}>{sub}</p>
+                                        <p className="text-sm font-medium truncate" style={{ color: '#dae2fd' }}>
+                                            {k.nomorKontrak || `Kontrak #${k.kontrakId}`}
+                                        </p>
+                                        <p className="text-xs mt-0.5" style={{ color: '#8c90a1' }}>
+                                            {k.namaClient || '–'} · {k.namaPaket || '–'}
+                                        </p>
                                     </div>
-                                    <span className="text-[10px] font-medium shrink-0" style={{ color: '#4a4f62' }}>{time}</span>
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md shrink-0"
+                                        style={{
+                                            background: k.status === 'ACTIVE' ? 'rgba(76,214,255,0.1)' : k.status === 'EXPIRED' ? 'rgba(255,180,171,0.1)' : 'rgba(205,189,255,0.1)',
+                                            color: k.status === 'ACTIVE' ? '#4cd6ff' : k.status === 'EXPIRED' ? '#ffb4ab' : '#cdbdff'
+                                        }}>
+                                        {k.status}
+                                    </span>
                                 </div>
                             ))}
                         </div>

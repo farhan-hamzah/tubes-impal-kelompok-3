@@ -130,16 +130,17 @@ export default function Katalog() {
     const handleSubmit = async e => {
         e.preventDefault(); setSubmitting(true); setError('');
         try {
-            if (user?.clientId && user.clientId !== 'CLIENT-001') {
-                // Real backend call
-                await KontrakService.createKontrakClient({
-                    clientId: user.clientId,
-                    paketId: selected.paketId,
-                    ...form,
-                    durasibulan: +form.durasibulan,
-                });
+            if (!user?.clientId) {
+                setError('Akun Anda belum memiliki ID klien. Hubungi administrator untuk melanjutkan pemesanan.');
+                setSubmitting(false);
+                return;
             }
-            // Demo mode: just show success
+            await KontrakService.createKontrakClient({
+                clientId: user.clientId,
+                paketId: selected.paketId,
+                ...form,
+                durasibulan: +form.durasibulan,
+            });
             setShowForm(false);
             setSuccess(`Kontrak untuk "${selected.namaPaket}" berhasil dibuat! Tim kami akan menghubungi Anda.`);
             setSelected(null);
@@ -212,7 +213,7 @@ export default function Katalog() {
                     <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[18px]"
                         style={{ color: '#4a4f62' }}>search</span>
                     <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-                        placeholder="Cari paket GPU atau klaster..."
+                        placeholder="Cari paket GPU..."
                         className="input input-icon w-full" />
                 </div>
 
