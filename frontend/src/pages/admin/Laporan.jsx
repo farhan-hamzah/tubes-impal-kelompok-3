@@ -1,9 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { MainLayout } from '../../components/layout/Layout';
 import { invoiceService } from '../../services/InvoiceService';
 import kontrakService from '../../services/KontrakService';
 
 const rupiah = (n) => n != null ? 'Rp ' + Number(n).toLocaleString('id-ID') : 'Rp –';
+
+const exportCSV = (dataBulanan) => {
+    const rows = [
+        ['=== Pendapatan Bulanan (6 Bulan Terakhir) ==='],
+        ['Bulan', 'Total (Rp)'],
+        ...dataBulanan.map(b => [b.label, b.total]),
+    ];
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `laporan_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+};
 
 export default function Laporan() {
     const [invoices, setInvoices] = useState([]);
@@ -55,16 +71,7 @@ export default function Laporan() {
         return bulan.map(b => ({ ...b, pct: Math.max(4, Math.round((b.total / max) * 100)) }));
     })();
 
-    // Top 5 klien berdasarkan total biaya kontrak
-    const top5Klien = (() => {
-        const map = {};
-        contracts.forEach(k => {
-            const nama = k.namaClient || 'Tidak Diketahui';
-            map[nama] = (map[nama] || 0) + (k.totalBiaya || 0);
-        });
-        return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 5);
-    })();
-    const maxSpend = top5Klien.length > 0 ? top5Klien[0][1] : 1;
+
 
     return (
         <MainLayout pageTitle="Laporan & Analitik">
@@ -114,8 +121,12 @@ export default function Laporan() {
                                 <h4 className="font-display text-xl font-bold" style={{ color: '#dae2fd' }}>Pendapatan Bulanan</h4>
                                 <p className="text-xs mt-1" style={{ color: '#8c90a1' }}>6 bulan terakhir · Rupiah</p>
                             </div>
-                            <button className="btn-secondary text-xs py-1.5 px-3">
-                                <span className="material-symbols-outlined text-[16px]">download</span> Ekspor
+                            <button
+                                onClick={() => exportCSV(dataBulanan)}
+                                disabled={loading}
+                                className="btn-secondary text-xs py-1.5 px-3"
+                                style={{ opacity: loading ? 0.5 : 1 }}>
+                                <span className="material-symbols-outlined text-[16px]">download</span> Ekspor CSV
                             </button>
                         </div>
                         <div className="h-52 flex items-end gap-2 px-2">
@@ -176,38 +187,8 @@ export default function Laporan() {
                     </div>
                 </div>
 
-                {/* Top 5 Klien + Ringkasan SLA */}
+                {/* Ringkasan SLA */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="card p-6">
-                        <div className="flex justify-between items-center mb-6">
-                            <h4 className="font-display text-lg font-bold" style={{ color: '#dae2fd' }}>Top 5 Klien</h4>
-                            <span className="text-xs" style={{ color: '#4a4f62' }}>Berdasarkan pengeluaran</span>
-                        </div>
-                        {loading ? (
-                            <div className="flex items-center justify-center h-32">
-                                <span className="material-symbols-outlined animate-spin text-3xl" style={{ color: '#4cd6ff' }}>progress_activity</span>
-                            </div>
-                        ) : top5Klien.length === 0 ? (
-                            <div className="flex items-center justify-center h-32">
-                                <p className="text-sm" style={{ color: '#4a4f62' }}>Belum ada data klien.</p>
-                            </div>
-                        ) : (
-                            <div className="space-y-3">
-                                {top5Klien.map(([nama, spend]) => (
-                                    <div key={nama}>
-                                        <div className="flex justify-between text-xs mb-1">
-                                            <span style={{ color: '#c2c6d8' }}>{nama}</span>
-                                            <span className="font-bold" style={{ color: '#4cd6ff' }}>{rupiah(spend)}</span>
-                                        </div>
-                                        <div className="progress-bar">
-                                            <div className="progress-fill" style={{ width: `${Math.round((spend / maxSpend) * 100)}%` }} />
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
                     <div className="card p-6">
                         <h4 className="font-display text-lg font-bold mb-6" style={{ color: '#dae2fd' }}>Ringkasan Insiden SLA</h4>
                         <div className="space-y-4">

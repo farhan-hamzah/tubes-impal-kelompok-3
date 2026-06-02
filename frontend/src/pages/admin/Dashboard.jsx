@@ -7,29 +7,6 @@ import kontrakService from '../../services/KontrakService';
 import userService from '../../services/UserService';
 import PaketService from '../../services/PaketService';
 
-// Helper: compute last-6-month revenue bars from invoices
-const computeMonthlyRevenue = (invoices) => {
-    const now = new Date();
-    const months = [];
-    for (let i = 5; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        months.push({
-            label: d.toLocaleDateString('en-US', { month: 'short' }),
-            month: d.getMonth(),
-            year: d.getFullYear(),
-            total: 0,
-        });
-    }
-    (Array.isArray(invoices) ? invoices : [])
-        .filter(inv => inv.statusPembayaran === 'PAID')
-        .forEach(inv => {
-            const d = new Date(inv.tanggalBayar || inv.tagihanMulai);
-            const m = months.find(mo => mo.month === d.getMonth() && mo.year === d.getFullYear());
-            if (m) m.total += (inv.jumlahTagihan || 0);
-        });
-    const max = Math.max(...months.map(m => m.total), 1);
-    return months.map(m => [m.label, Math.max(4, Math.round((m.total / max) * 100))]);
-};
 
 // ── Reusable sub-components ──────────────────────────────
 const KpiCard = ({ label, value, delta, icon, accent }) => (
@@ -65,7 +42,6 @@ const ResourceBar = ({ label, value, color }) => (
 export default function AdminDashboard() {
     const { user } = useAuth();
     const [stats, setStats] = useState({ invoices: '-', contracts: '-', clients: '-', gpuUnits: '-' });
-    const [revenueChart, setRevenueChart] = useState([]);
     const [recentKontraks, setRecentKontraks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -88,7 +64,7 @@ export default function AdminDashboard() {
                     clients: Array.isArray(clients) ? clients.length : '-',
                     gpuUnits: totalGpu,
                 });
-                setRevenueChart(computeMonthlyRevenue(invoices));
+
                 setRecentKontraks(Array.isArray(contracts) ? contracts.slice(-3).reverse() : []);
             } catch (err) {
                 setError(err.message || 'Gagal memuat data dashboard.');
@@ -114,9 +90,6 @@ export default function AdminDashboard() {
                         </p>
                     </div>
                     <div className="flex gap-3">
-                        <button className="btn-secondary">
-                            <span className="material-symbols-outlined text-[18px]">download</span> Ekspor Log
-                        </button>
                         <Link to="/admin/paket" className="btn-primary">
                             <span className="material-symbols-outlined text-[18px]">add</span> Klaster Baru
                         </Link>
@@ -151,42 +124,9 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
-                {/* Charts */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Revenue Chart */}
-                    <div className="lg:col-span-2 card p-6">
-                        <div className="flex items-center justify-between mb-6">
-                            <div>
-                                <h4 className="font-display text-lg font-bold" style={{ color: '#dae2fd' }}>Performa Pendapatan</h4>
-                                <p className="text-xs mt-1" style={{ color: '#8c90a1' }}>Total pendapatan 30 hari terakhir</p>
-                            </div>
-                            <select className="select" style={{ width: 'auto', padding: '0.4rem 2rem 0.4rem 0.75rem', fontSize: '0.75rem' }}>
-                                <option>30 Hari Terakhir</option>
-                                <option>90 Hari Terakhir</option>
-                            </select>
-                        </div>
-                        <div className="h-52 flex items-end gap-2 px-2">
-                            {loading ? (
-                                <div className="flex-1 flex items-center justify-center">
-                                    <span className="material-symbols-outlined spin text-3xl" style={{ color: '#4cd6ff' }}>sync</span>
-                                </div>
-                            ) : revenueChart.length === 0 ? (
-                                <div className="flex-1 flex items-center justify-center">
-                                    <p className="text-sm" style={{ color: '#4a4f62' }}>Belum ada data pendapatan.</p>
-                                </div>
-                            ) : revenueChart.map(([label, h]) => (
-                                <div key={label} className="flex-1 flex flex-col items-center gap-2 group">
-                                    <div className="w-full rounded-t-md transition-all duration-300"
-                                        style={{ height: `${h}%`, background: 'rgba(76,214,255,0.2)' }}
-                                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(76,214,255,0.6)'}
-                                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(76,214,255,0.2)'} />
-                                    <span className="text-[10px]" style={{ color: '#8c90a1' }}>{label}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* GPU Donut */}
+                {/* GPU Fleet Status + Deployment Stream */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* GPU Fleet Status */}
                     <div className="card p-6 flex flex-col items-center justify-center text-center">
                         <h4 className="font-display text-lg font-bold mb-1" style={{ color: '#dae2fd' }}>GPU Fleet Status</h4>
                         <p className="text-xs mb-6" style={{ color: '#8c90a1' }}>Real-time resource allocation</p>
@@ -195,7 +135,7 @@ export default function AdminDashboard() {
                             const occupied = typeof stats.contracts === 'number' ? Math.min(stats.contracts, gpuTotal) : 0;
                             const idle     = Math.max(gpuTotal - occupied, 0);
                             const pct      = gpuTotal > 0 ? Math.round((occupied / gpuTotal) * 100) : 0;
-                            const circumference = 2 * Math.PI * 64; // r=64
+                            const circumference = 2 * Math.PI * 64;
                             const dashOffset = circumference - (pct / 100) * circumference;
                             return (
                                 <>
@@ -232,23 +172,11 @@ export default function AdminDashboard() {
                             );
                         })()}
                     </div>
-                </div>
 
-                {/* Resource Usage + Activity */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="card p-6">
-                        <h4 className="font-display text-lg font-bold mb-6" style={{ color: '#dae2fd' }}>Physical Resource Utilization</h4>
-                        <div className="space-y-6">
-                            <ResourceBar label="Cluster CPU Load" value={64} color="#4cd6ff" />
-                            <ResourceBar label="Memory (RAM) Pool" value={42} color="#4cd6ff" />
-                            <ResourceBar label="Network Throughput" value={88} color="#cdbdff" />
-                        </div>
-                    </div>
-
+                    {/* Deployment Stream */}
                     <div className="card p-6">
                         <div className="flex items-center justify-between mb-6">
                             <h4 className="font-display text-lg font-bold" style={{ color: '#dae2fd' }}>Deployment Stream</h4>
-                            <span className="material-symbols-outlined cursor-pointer" style={{ color: '#4a4f62' }}>more_vert</span>
                         </div>
                         <div className="space-y-4">
                             {loading ? (
@@ -286,6 +214,16 @@ export default function AdminDashboard() {
                                 </div>
                             ))}
                         </div>
+                    </div>
+                </div>
+
+                {/* Physical Resource Utilization */}
+                <div className="card p-6">
+                    <h4 className="font-display text-lg font-bold mb-6" style={{ color: '#dae2fd' }}>Physical Resource Utilization</h4>
+                    <div className="space-y-6">
+                        <ResourceBar label="Cluster CPU Load" value={64} color="#4cd6ff" />
+                        <ResourceBar label="Memory (RAM) Pool" value={42} color="#4cd6ff" />
+                        <ResourceBar label="Network Throughput" value={88} color="#cdbdff" />
                     </div>
                 </div>
             </div>

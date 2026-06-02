@@ -63,9 +63,6 @@ export default function ClientList() {
                             Pantau alokasi sumber daya, kesehatan kontrak, dan performa klien di seluruh klaster.
                         </p>
                     </div>
-                    <button className="btn-primary">
-                        <span className="material-symbols-outlined">person_add</span> Daftarkan Klien
-                    </button>
                 </div>
 
                 {/* KPI Snapshot */}
@@ -104,9 +101,6 @@ export default function ClientList() {
                         </div>
                     </div>
                     <div className="flex gap-2">
-                        <button className="btn-secondary py-2 px-3">
-                            <span className="material-symbols-outlined text-[18px]">download</span>
-                        </button>
                         <button onClick={load} className="btn-secondary py-2 px-3">
                             <span className="material-symbols-outlined text-[18px]">refresh</span>
                         </button>
