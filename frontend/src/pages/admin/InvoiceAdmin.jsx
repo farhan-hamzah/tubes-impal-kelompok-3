@@ -9,8 +9,8 @@ const tgl = (d) => d ? new Date(d).toLocaleDateString('id-ID', { day: 'numeric',
 
 
 const StatusBadge = ({ status }) => {
-    const map = { PAID: 'badge-paid', UNPAID: 'badge-unpaid', OVERDUE: 'badge-overdue' };
-    const labels = { PAID: 'Lunas', UNPAID: 'Belum Bayar', OVERDUE: 'Jatuh Tempo' };
+    const map = { PAID: 'badge-paid', UNPAID: 'badge-unpaid', OVERDUE: 'badge-overdue', REJECTED: 'badge-overdue' };
+    const labels = { PAID: 'Lunas', UNPAID: 'Belum Bayar', OVERDUE: 'Jatuh Tempo', REJECTED: 'Ditolak' };
     return <span className={`badge ${map[status] || 'badge-expired'}`}>{labels[status] || status}</span>;
 };
 
@@ -24,6 +24,8 @@ export default function InvoiceAdmin() {
     const [validasiId, setValidasiId] = useState(null);
     const [previewBukti, setPreviewBukti] = useState(null);
     const [submitting, setSubmitting] = useState(false);
+    const [acceptingId, setAcceptingId] = useState(null);
+    const [decliningId, setDecliningId] = useState(null);
     const [error, setError] = useState('');
     const [form, setForm] = useState({ kontrakId: '', tagihanMulai: '', tagihanAkhir: '', tanggalJatuhTempo: '' });
     const [formVal, setFormVal] = useState({ jumlahDibayar: '', metodePembayaran: '' });
@@ -81,6 +83,32 @@ export default function InvoiceAdmin() {
             fetchAll();
         } catch (err) { setError(err.message); }
         finally { setSubmitting(false); }
+    };
+
+    const handleAccept = async (inv) => {
+        if (!window.confirm(`Setujui pembayaran untuk invoice ${inv.nomorInvoice}?`)) return;
+        setAcceptingId(inv.invoiceId); setError('');
+        try {
+            await invoiceService.validasiPembayaran(user?.adminId, {
+                invoiceId: inv.invoiceId,
+                jumlahDibayar: inv.jumlahTagihan,
+                metodePembayaran: 'Transfer Bank',
+            });
+            fetchAll();
+        } catch (err) { setError(err.message); }
+        finally { setAcceptingId(null); }
+    };
+
+    const handleDecline = async (inv) => {
+        if (!window.confirm(`Tolak pembayaran untuk invoice ${inv.nomorInvoice}? Status akan berubah menjadi Ditolak.`)) return;
+        setDecliningId(inv.invoiceId); setError('');
+        try {
+            // Update status locally — backend doesn't have a reject endpoint
+            setInvoices(prev => prev.map(i =>
+                i.invoiceId === inv.invoiceId ? { ...i, statusPembayaran: 'REJECTED' } : i
+            ));
+        } catch (err) { setError(err.message); }
+        finally { setDecliningId(null); }
     };
 
     const paid = invoices.filter(i => i.statusPembayaran === 'PAID').length;
@@ -181,14 +209,39 @@ export default function InvoiceAdmin() {
                                         </td>
                                         <td>
                                             {inv.statusPembayaran === 'UNPAID' && inv.buktiPembayaran && (
-                                                <button
-                                                    onClick={() => { setValidasiId(inv.invoiceId); setFormVal({ jumlahDibayar: inv.jumlahTagihan, metodePembayaran: '' }); }}
-                                                    className="btn-primary text-xs py-1.5 px-3">
-                                                    Validasi
-                                                </button>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => handleAccept(inv)}
+                                                        disabled={acceptingId === inv.invoiceId || decliningId === inv.invoiceId}
+                                                        className="btn-primary text-xs py-1.5 px-3"
+                                                        style={{ opacity: acceptingId === inv.invoiceId ? 0.6 : 1 }}>
+                                                        {acceptingId === inv.invoiceId ? (
+                                                            <><span className="material-symbols-outlined text-[14px] animate-spin">progress_activity</span> Proses...</>
+                                                        ) : (
+                                                            <><span className="material-symbols-outlined text-[14px]">check_circle</span> Accept</>
+                                                        )}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDecline(inv)}
+                                                        disabled={acceptingId === inv.invoiceId || decliningId === inv.invoiceId}
+                                                        className="btn-secondary text-xs py-1.5 px-3"
+                                                        style={{ borderColor: '#ffb4ab', color: '#ffb4ab', opacity: decliningId === inv.invoiceId ? 0.6 : 1 }}>
+                                                        {decliningId === inv.invoiceId ? (
+                                                            <><span className="material-symbols-outlined text-[14px] animate-spin">progress_activity</span> Proses...</>
+                                                        ) : (
+                                                            <><span className="material-symbols-outlined text-[14px]">cancel</span> Decline</>
+                                                        )}
+                                                    </button>
+                                                </div>
                                             )}
                                             {inv.statusPembayaran === 'UNPAID' && !inv.buktiPembayaran && (
                                                 <span className="text-xs" style={{ color: '#4a4f62' }}>Menunggu bukti</span>
+                                            )}
+                                            {(inv.statusPembayaran === 'PAID') && (
+                                                <span className="text-xs font-semibold" style={{ color: '#4cd6ff' }}>✓ Disetujui</span>
+                                            )}
+                                            {(inv.statusPembayaran === 'REJECTED') && (
+                                                <span className="text-xs font-semibold" style={{ color: '#ffb4ab' }}>✗ Ditolak</span>
                                             )}
                                         </td>
                                     </tr>
