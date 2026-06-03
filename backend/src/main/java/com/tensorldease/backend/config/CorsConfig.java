@@ -20,7 +20,8 @@ public class CorsConfig {
         config.setAllowedOriginPatterns(List.of(
             "http://localhost:5173",
             "https://tensorlease.vercel.app",
-            "https://tensorlease-*.vercel.app"  // cover semua preview deployment
+            "https://tensorlease-*.vercel.app",           // cover semua preview & git URL
+            "https://*-farhan-hamzahs-projects.vercel.app" // cover semua project URL kamu
         ));
 
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
