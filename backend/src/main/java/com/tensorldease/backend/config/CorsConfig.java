@@ -15,18 +15,22 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // Gunakan setAllowedOriginPatterns, bukan setAllowedOrigins
-        // agar kompatibel dengan allowCredentials=true + wildcard subdomain
+        // setAllowedOriginPatterns support wildcard (*) per-segment only.
+        // "tensorlease-git-main-farhan-hamzahs-projects.vercel.app" adalah
+        // satu segment penuh, jadi harus di-list eksplisit atau pakai "*.vercel.app"
         config.setAllowedOriginPatterns(List.of(
             "http://localhost:5173",
+            "http://localhost:3000",
             "https://tensorlease.vercel.app",
-            "https://tensorlease-*.vercel.app",           // cover semua preview & git URL
-            "https://*-farhan-hamzahs-projects.vercel.app" // cover semua project URL kamu
+            "https://tensorlease-git-main-farhan-hamzahs-projects.vercel.app", // exact URL dari screenshot
+            "https://*.vercel.app"  // cover semua preview deploy Vercel sekaligus
         ));
 
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));
+        config.setExposedHeaders(List.of("Authorization")); // agar frontend bisa baca JWT header
         config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
