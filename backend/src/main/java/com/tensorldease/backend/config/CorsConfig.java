@@ -14,10 +14,15 @@ public class CorsConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(
+
+        // Gunakan setAllowedOriginPatterns, bukan setAllowedOrigins
+        // agar kompatibel dengan allowCredentials=true + wildcard subdomain
+        config.setAllowedOriginPatterns(List.of(
             "http://localhost:5173",
-            "https://tensorlease.vercel.app"
+            "https://tensorlease.vercel.app",
+            "https://tensorlease-*.vercel.app"  // cover semua preview deployment
         ));
+
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
