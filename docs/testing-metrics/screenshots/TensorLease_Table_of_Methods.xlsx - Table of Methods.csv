@@ -1,0 +1,37 @@
+TensorLease API - Table of Methods,,,,,
+Feature,Method,Status Progress,URL Test,Request Body / Params,Hasil Uji Coba
+AUTH,,,,,
+Register Client,POST,Done,https://tubes-impal-kelompok-3-production.up.railway.app/api/auth/register,"{""nama"":""..."",""email"":""..."",""password"":""..."",""nomorTelepon"":""...""}",https://drive.google.com/drive/folders/1QNfGFCg8b7ULIkiDhc6PZB849Qs8hwb9?usp=drive_link
+Login Admin,POST,Done,https://tubes-impal-kelompok-3-production.up.railway.app/api/auth/login,"{""email"":""admin@tensorlease.com"",""password"":""...""}",https://drive.google.com/drive/folders/1OkpsggYEAzrnhm46LXe1BLjGX4E5ivdR?usp=drive_link
+Login Client,POST,Done,https://tubes-impal-kelompok-3-production.up.railway.app/api/auth/login,"{""email"":""..."",""password"":""...""}",https://drive.google.com/drive/folders/1j5opZFTuGud_DkMgRYVhMa3bQLVbynlb?usp=drive_link
+Forgot Password,POST,Done,https://tubes-impal-kelompok-3-production.up.railway.app/api/auth/forgot-password,"{""email"":""...""}",https://drive.google.com/drive/folders/1QvFUFdwcTosMuJWkox4jYgGUwJt_r0ls?usp=sharing
+Reset Password,POST,Done,https://tubes-impal-kelompok-3-production.up.railway.app/api/auth/reset-password,"{""token"":""..."",""passwordBaru"":""...""}",https://drive.google.com/drive/folders/1g55SnsRW3lLpAbrQ1UwwsrlTpCm7qnXL?usp=sharing
+PAKET HPC,,,,,
+Get All Paket,GET,Done,https://tubes-impal-kelompok-3-production.up.railway.app/api/paket/all,-,https://drive.google.com/drive/folders/1BlgpdSBVwIzfn35sO0H3lU4BSPORJeTr?usp=sharing
+Buat Paket (Admin),POST,Done,https://tubes-impal-kelompok-3-production.up.railway.app/api/admin/paket,"{""namaPaket"":""..."",""spesifikasiGpu"":""..."",""jumlahCpuCore"":32,""kapasitasRamGb"":128,""storage"":""..."",""jumlahUnit"":5,""tarif"":1500000,""status"":""AKTIF""}",https://drive.google.com/drive/folders/11P-uARGj70pU2XP8eQXttCTdo72QjiBk?usp=sharing
+Update Paket (Admin),PUT,Done,https://tubes-impal-kelompok-3-production.up.railway.app/api/admin/paket/{paketId},"{""namaPaket"":""..."",""tarif"":...,""status"":""AKTIF""}",https://drive.google.com/drive/folders/1ErGnGf-sLqr5O8OrV3lRK-XIy0dmPvrH?usp=drive_link
+Delete Paket (Admin),DELETE,Done,https://tubes-impal-kelompok-3-production.up.railway.app/api/admin/paket/{paketId},-,https://drive.google.com/drive/folders/14kxT2De2PYzeGgfk9v2arWpgeFohqtzS?usp=sharing
+KONTRAK,,,,,
+Buat Kontrak by Client,POST,Done,https://tubes-impal-kelompok-3-production.up.railway.app/api/client/kontrak,"{""clientId"":""{{clientId}}"",""paketId"":""..."",""tanggalMulai"":""2026-05-03"",""durasibulan"":1,""catatan"":""...""}",https://drive.google.com/drive/folders/13iNIz14ojhfUxqh1tWrGTBwQfI418kRK?usp=sharing
+Buat Kontrak by Admin,POST,Done,https://tubes-impal-kelompok-3-production.up.railway.app/api/admin/kontrak,"{""clientId"":""..."",""adminId"":""{{adminId}}"",""paketId"":""..."",""tanggalMulai"":""2026-05-03"",""durasibulan"":1}",https://drive.google.com/drive/folders/1U1GrbQfLD5ZPR3bBQr43_3GpYPMi5EJz?usp=sharing
+Get All Kontrak (Admin),GET,Done,https://tubes-impal-kelompok-3-production.up.railway.app/api/admin/kontrak,-,https://drive.google.com/drive/folders/1LXa_nnSBtr43GG-tnoWVQNZ3x-zD7j6R?usp=drive_link
+Get Kontrak by Status,GET,Done,https://tubes-impal-kelompok-3-production.up.railway.app/api/admin/kontrak/status/ACTIVE,-,https://drive.google.com/drive/folders/1TnpmqyIh5nmQCPBPWY1pB4WWUYAc0UgS?usp=sharing
+Get Kontrak by Client,GET,Done,https://tubes-impal-kelompok-3-production.up.railway.app/api/client/kontrak/{clientId},-,https://drive.google.com/drive/folders/1rXzXkZy1kVThQn9HA0NTwYVc0Byl_Q3h?usp=sharing
+Get Detail Kontrak,GET,Done,https://tubes-impal-kelompok-3-production.up.railway.app/api/kontrak/{kontrakId},-,https://drive.google.com/drive/folders/1ZKy_nndLVPyeV7X2b33FjgZ-N8pR1zlN?usp=sharing
+INVOICE,,,,,
+Buat Invoice (Admin),POST,Done,https://tubes-impal-kelompok-3-production.up.railway.app/api/admin/invoice,"{""kontrakId"":""..."",""tagihanMulai"":""2026-05-01"",""tagihanAkhir"":""2026-05-31"",""tanggalJatuhTempo"":""2026-05-14""}",https://drive.google.com/drive/folders/1gsogfU7dUnVeBKVZaR9BgSLbdUK1tQ0g?usp=sharing
+Get All Invoice (Admin),GET,Done,https://tubes-impal-kelompok-3-production.up.railway.app/api/admin/invoice,-,https://drive.google.com/drive/folders/1uwSNYdOXlAX6cZtAAXzbUlwJeXzefRRh?usp=sharing
+Get Invoice by Status,GET,Done,https://tubes-impal-kelompok-3-production.up.railway.app/api/admin/invoice/status/UNPAID,-,https://drive.google.com/drive/folders/1wU4XCcs_dgSvQTgTFeE1vQN7YRpGGx4s?usp=sharing
+Get Invoice by Client,GET,Done,https://tubes-impal-kelompok-3-production.up.railway.app/api/client/invoice/{clientId},-,https://drive.google.com/drive/folders/1mOLSKkYn5YurHNMKxNxUmsld15qjjvsu?usp=sharing
+Upload Bukti Transfer,POST,Done,https://tubes-impal-kelompok-3-production.up.railway.app/api/client/invoice/upload-bukti/{invoiceId},"{""buktiPembayaran"":""base64string...""}",https://drive.google.com/drive/folders/1YkHwKcX2sWkvkCAigTAhcmombNAir7sz?usp=sharing
+PAYMENT,,,,,
+Get Snap Token (Midtrans),POST,Done,https://tubes-impal-kelompok-3-production.up.railway.app/api/payment/snap-token,"{""invoiceId"":""...""}",https://drive.google.com/drive/folders/1tkv4c33CrrmM_J59CvkVSLuyBAlYrYSA?usp=sharing
+Webhook Notification,POST,Done,https://tubes-impal-kelompok-3-production.up.railway.app/api/payment/notification,(dikirim otomatis oleh Midtrans),https://drive.google.com/drive/folders/1VU-TuqjMEBlIJP_Rcn8_qk8oWrQS_TJ6?usp=sharing
+USER,,,,,
+Get Profil,GET,Done,https://tubes-impal-kelompok-3-production.up.railway.app/api/user/profile/{clientId},-,https://drive.google.com/drive/folders/1ebmT176aMbsSiIdHxNitE1AgGAeRp81p?usp=sharing
+Update Profil,PUT,Done,https://tubes-impal-kelompok-3-production.up.railway.app/api/user/update/{clientId},"{""nama"":""..."",""nomorTelepon"":""..."",""passwordLama"":"""",""passwordBaru"":""""}",https://drive.google.com/drive/folders/15eTvVAUQPWbah8Y22FOw8POBVMUD7ab9?usp=drive_link
+Logout,POST,Done,https://tubes-impal-kelompok-3-production.up.railway.app/api/user/logout,-,https://drive.google.com/drive/folders/1fWlxj5urmPGTyzKVQL3Wuz3h32qXBn6i?usp=drive_link
+Hapus Akun,DELETE,Done,https://tubes-impal-kelompok-3-production.up.railway.app/api/user/delete/{clientId},-,https://drive.google.com/drive/folders/1WCbqGDC4Qqpt4hHPsPunjTJAaklk5iUB?usp=sharing
+ADMIN,,,,,
+Get All Client (Admin),GET,Done,https://tubes-impal-kelompok-3-production.up.railway.app/api/admin/clients,-,https://drive.google.com/drive/folders/1b0xyKoDhfsZaVwxvhvkpdWRSTQbC5QXT?usp=sharing
+Get Detail Client (Admin),GET,Done,https://tubes-impal-kelompok-3-production.up.railway.app/api/admin/clients/{clientId},-,https://drive.google.com/drive/folders/1JH34rf-0O7Lu7iSiZWNbhJKJKgIIxBvC?usp=sharing
